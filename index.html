@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Conteo de Recibo por Orden y SKU</title>
+    <title>Sistema de Conteo de Recibo - Control por Turno</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->
@@ -26,56 +26,93 @@
         <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <i class="fa-solid fa-boxes-packing text-2xl text-indigo-200"></i>
-                <h1 class="text-xl font-bold tracking-wide">Conteo de Recibo</h1>
+                <h1 class="text-xl font-bold tracking-wide">Conteo de Recibo - Turno Activo</h1>
             </div>
-            <div id="header-status" class="text-xs bg-indigo-800 px-2.5 py-1 rounded-full font-medium">En Proceso</div>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="abrirModalCerrarTurno()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs shadow transition">
+                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> Cerrar Turno
+                </button>
+                <div id="header-status" class="text-xs bg-indigo-800 px-2.5 py-1 rounded-full font-medium">Turno Abierto</div>
+            </div>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto px-4 py-6">
+    <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
 
-        <!-- NAVEGACIÓN POR 3 PASOS -->
-        <div class="mb-6 bg-white rounded-xl shadow-sm p-3 flex justify-between text-xs sm:text-sm font-medium border border-slate-200 overflow-x-auto gap-2">
+        <!-- NAVEGACIÓN POR PESTAÑAS -->
+        <div class="bg-white rounded-xl shadow-sm p-3 flex justify-between text-xs sm:text-sm font-medium border border-slate-200 overflow-x-auto gap-2">
             <button type="button" id="step-btn-1" onclick="cambiarPestana(1)" class="flex-1 py-2 px-3 rounded-lg text-center bg-indigo-50 text-indigo-700 font-bold border border-indigo-200 transition">
-                1. Registro de Orden
+                1. Órdenes del Turno
             </button>
             <button type="button" id="step-btn-2" onclick="cambiarPestana(2)" class="flex-1 py-2 px-3 rounded-lg text-center text-slate-500 hover:bg-slate-50 transition">
-                2. Captura de Conteos
+                2. Captura de SKU y Tarimas
             </button>
             <button type="button" id="step-btn-3" onclick="cambiarPestana(3)" class="flex-1 py-2 px-3 rounded-lg text-center text-slate-500 hover:bg-slate-50 transition">
-                3. Resumen y Cierre
+                3. Resumen y Reportes Generales
             </button>
         </div>
 
-        <!-- SECCIÓN 1: REGISTRO INICIAL Y PRODUCTOS (SKU) -->
+        <!-- SECCIÓN 1: GESTIÓN DE ÓRDENES DEL TURNO -->
         <section id="paso-1" class="space-y-6">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-                <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4 flex items-center">
-                    <i class="fa-solid fa-file-invoice text-indigo-600 mr-2"></i> Información General de la Orden
-                </h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Orden de Compra (OC)</label>
-                        <input type="text" id="oc-input" placeholder="Ej: 4308694" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Número de Empleado</label>
-                        <input type="text" id="empleado-input" placeholder="Ej: 189703" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Total Cajas Esperadas de la Orden</label>
-                        <input type="number" id="total-esperado-oc-input" placeholder="Ej: 2604" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-wrap justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center">
+                        <i class="fa-solid fa-clipboard-list text-indigo-600 mr-2"></i> Órdenes de Compra del Turno Actual
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Administra, agrega y da seguimiento a todas las órdenes de la jornada.</p>
                 </div>
+                <button type="button" onclick="abrirModalNuevaOrden()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-lg text-sm shadow transition flex items-center">
+                    <i class="fa-solid fa-plus mr-2"></i> Agregar Nueva Orden
+                </button>
             </div>
 
-            <!-- Registro de SKUs -->
+            <!-- Listado de Órdenes del Turno -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <h3 class="font-bold text-slate-700 text-sm mb-4 border-b pb-2">Órdenes Registradas (<span id="contador-ordenes">0</span>)</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-100 text-slate-700 uppercase">
+                            <tr>
+                                <th class="p-3">OC</th>
+                                <th class="p-3">Empleado</th>
+                                <th class="p-3">Esperadas</th>
+                                <th class="p-3">Contadas</th>
+                                <th class="p-3">SKUs</th>
+                                <th class="p-3">Estado</th>
+                                <th class="p-3 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-ordenes-body" class="divide-y divide-slate-200">
+                            <tr><td colspan="7" class="p-4 text-center text-slate-400">No hay órdenes registradas en este turno.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 2: CAPTURA DE SKU Y TARIMAS PARA LA ORDEN ACTIVA -->
+        <section id="paso-2" class="hidden space-y-6">
+            <!-- Selector de Orden Activa -->
+            <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div class="flex items-center space-x-3">
+                    <i class="fa-solid fa-file-circle-check text-indigo-600 text-xl"></i>
+                    <div>
+                        <span class="text-xs font-semibold text-indigo-600 uppercase">Orden Seleccionada para Auditoría</span>
+                        <h3 class="text-base font-bold text-slate-800" id="info-orden-activa">Ninguna orden seleccionada</h3>
+                    </div>
+                </div>
+                <button type="button" onclick="cambiarPestana(1)" class="bg-white border border-indigo-300 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-indigo-100">
+                    Cambiar / Ver Órdenes
+                </button>
+            </div>
+
+            <!-- Registro de SKUs para la Orden Activa -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
                 <div class="flex justify-between items-center border-b pb-2 mb-4">
                     <h2 class="text-lg font-bold text-slate-800 flex items-center">
-                        <i class="fa-solid fa-barcode text-indigo-600 mr-2"></i> Productos de la Orden (SKUs)
+                        <i class="fa-solid fa-barcode text-indigo-600 mr-2"></i> SKUs de la Orden Activa
                     </h2>
-                    <span id="badge-sku-count" class="text-xs bg-indigo-100 text-indigo-800 font-semibold px-2.5 py-1 rounded-full">0 SKUs agregados</span>
+                    <span id="badge-sku-count" class="text-xs bg-indigo-100 text-indigo-800 font-semibold px-2.5 py-1 rounded-full">0 SKUs</span>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
@@ -84,18 +121,17 @@
                         <input type="text" id="sku-codigo-input" placeholder="Ej: 10024143" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Cajas Esperadas para este SKU</label>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Cajas Esperadas (SKU)</label>
                         <input type="number" id="sku-cajas-input" placeholder="Ej: 200" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                     </div>
                     <div class="flex items-end">
-                        <button type="button" onclick="agregarSKU()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg text-sm transition flex items-center justify-center">
+                        <button type="button" onclick="agregarSKUOrdenActiva()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg text-sm transition flex items-center justify-center">
                             <i class="fa-solid fa-plus mr-1.5"></i> Agregar SKU
                         </button>
                     </div>
                 </div>
 
-                <!-- Tabla de SKUs Agregados -->
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto mb-4">
                     <table class="w-full text-left text-xs text-slate-600">
                         <thead class="bg-slate-100 text-slate-700 uppercase">
                             <tr>
@@ -104,40 +140,20 @@
                                 <th class="p-2.5 text-center">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="tabla-skus-body">
-                            <tr><td colspan="3" class="p-4 text-center text-slate-400">No hay SKUs registrados aún.</td></tr>
+                        <tbody id="tabla-skus-orden-body">
+                            <tr><td colspan="3" class="p-4 text-center text-slate-400">Selecciona una orden y agrega SKUs.</td></tr>
                         </tbody>
-                        <tfoot class="bg-slate-50 font-bold border-t">
-                            <tr>
-                                <td class="p-2.5">Suma de SKUs:</td>
-                                <td class="p-2.5" id="sum-skus-esperadas">0 cajas</td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
                     </table>
                 </div>
-
-                <div class="mt-5 text-right">
-                    <button type="button" onclick="iniciarCaptura()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-lg text-sm shadow transition">
-                        Iniciar Captura de Conteos <i class="fa-solid fa-arrow-right ml-1"></i>
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- SECCIÓN 2: CAPTURA DE CONTEO Y TARIMAS POR SKU -->
-        <section id="paso-2" class="hidden space-y-6">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Seleccionar SKU para Realizar Conteo:</label>
-                <select id="sku-selector" onchange="seleccionarSKUActivo()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500">
-                </select>
             </div>
 
-            <div id="panel-conteo-sku" class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 hidden">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-4 mb-4 gap-3">
+            <!-- Panel de Conteo Físico por Tarimas y Camas (SKU Seleccionado) -->
+            <div id="panel-conteo-sku" class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 hidden space-y-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-4 gap-3">
                     <div>
-                        <span class="text-xs text-indigo-600 font-bold uppercase tracking-wider">SKU Seleccionado</span>
-                        <h2 class="text-2xl font-black text-slate-800" id="sku-activo-titulo">---</h2>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Seleccionar SKU a Contar:</label>
+                        <select id="sku-selector-conteo" onchange="seleccionarSKUConteo()" class="border border-slate-300 rounded-lg p-2 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 min-w-[220px]">
+                        </select>
                     </div>
                     <div class="flex gap-2 text-center text-xs">
                         <div class="bg-slate-100 p-2.5 rounded-lg border border-slate-200">
@@ -158,7 +174,7 @@
                 <div class="space-y-4">
                     <div class="flex justify-between items-center">
                         <h3 class="font-bold text-slate-700 text-sm"><i class="fa-solid fa-layer-group text-indigo-500 mr-1.5"></i> Tarimas y Camas Registradas</h3>
-                        <button type="button" onclick="agregarTarima()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-3 py-1.5 rounded-lg text-xs border border-indigo-200 transition">
+                        <button type="button" onclick="agregarTarimaOrdenActiva()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-3 py-1.5 rounded-lg text-xs border border-indigo-200 transition">
                             <i class="fa-solid fa-plus mr-1"></i> Agregar Tarima
                         </button>
                     </div>
@@ -172,77 +188,119 @@
                     </button>
                     <div class="flex gap-2">
                         <button type="button" onclick="cambiarPestana(3)" class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-lg text-xs shadow">
-                            Ver Resumen y Cierre <i class="fa-solid fa-arrow-right ml-1"></i>
+                            Ver Resumen General <i class="fa-solid fa-arrow-right ml-1"></i>
                         </button>
-                        <button type="button" onclick="marcarSKUFinalizado()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs shadow">
-                            <i class="fa-solid fa-check-double mr-1.5"></i> Concluir SKU
+                        <button type="button" onclick="marcarOrdenConcluida()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs shadow">
+                            <i class="fa-solid fa-check-double mr-1.5"></i> Concluir Esta Orden
                         </button>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- SECCIÓN 3: RESUMEN Y CIERRE -->
+        <!-- SECCIÓN 3: RESUMEN Y REPORTES CONSOLIDADOS DEL TURNO -->
         <section id="paso-3" class="hidden space-y-6">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
                 <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4 flex items-center">
-                    <i class="fa-solid fa-clipboard-check text-indigo-600 mr-2"></i> Resumen Final de Conteos de la Orden
+                    <i class="fa-solid fa-clipboard-check text-indigo-600 mr-2"></i> Resumen Consolidado del Turno
                 </h2>
 
+                <!-- Indicadores Generales Turno -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 text-center text-xs">
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <span class="block font-semibold text-slate-500">Órdenes Revisadas</span>
+                        <span class="text-lg font-bold text-slate-800" id="ind-total-ordenes">0</span>
+                    </div>
+                    <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-200">
+                        <span class="block font-semibold text-indigo-600">Cajas Solicitadas</span>
+                        <span class="text-lg font-bold text-indigo-800" id="ind-cajas-sol">0</span>
+                    </div>
+                    <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
+                        <span class="block font-semibold text-emerald-600">Cajas Contadas</span>
+                        <span class="text-lg font-bold text-emerald-800" id="ind-cajas-cont">0</span>
+                    </div>
+                    <div class="bg-amber-50 p-3 rounded-lg border border-amber-200">
+                        <span class="block font-semibold text-amber-600">Discrepancias Totales</span>
+                        <span class="text-lg font-bold text-amber-800" id="ind-disc-totales">0</span>
+                    </div>
+                </div>
+
+                <!-- Tabla Resumen Órdenes -->
                 <div class="overflow-x-auto mb-6">
                     <table class="w-full text-left text-xs">
                         <thead class="bg-slate-100 text-slate-700 uppercase">
                             <tr>
-                                <th class="p-3">SKU</th>
+                                <th class="p-3">OC</th>
+                                <th class="p-3">Empleado</th>
+                                <th class="p-3">Fecha/Hora</th>
                                 <th class="p-3">Esperadas</th>
                                 <th class="p-3">Contabilizadas</th>
-                                <th class="p-3">Tarimas</th>
-                                <th class="p-3">Camas</th>
+                                <th class="p-3">SKUs</th>
                                 <th class="p-3">Faltantes</th>
                                 <th class="p-3">Sobrantes</th>
                                 <th class="p-3">Mermas</th>
                                 <th class="p-3">Estado</th>
                             </tr>
                         </thead>
-                        <tbody id="tabla-resumen-body" class="divide-y divide-slate-200"></tbody>
+                        <tbody id="tabla-resumen-turno-body" class="divide-y divide-slate-200">
+                        </tbody>
                     </table>
                 </div>
 
-                <!-- Detalle y Acumulados de Discrepancias -->
-                <div class="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                    <h3 class="font-bold text-slate-700 text-sm mb-3 flex items-center">
-                        <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i> Acumulado de Discrepancias y Mermas
-                    </h3>
-                    <div id="resumen-discrepancias-container" class="space-y-2 text-xs text-slate-600">
-                        <p class="text-slate-400">No hay discrepancias registradas.</p>
-                    </div>
-                </div>
-
-                <!-- Botones de Exportación y Cierre -->
+                <!-- Botones de Exportación Consolidada -->
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-wrap gap-3 justify-between items-center">
                     <div class="flex flex-wrap gap-2">
-                        <button type="button" onclick="exportarExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3.5 py-2 rounded-lg text-xs shadow flex items-center">
-                            <i class="fa-solid fa-file-excel text-base mr-1.5"></i> Excel (.xlsx)
+                        <button type="button" onclick="exportarExcelTurno()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3.5 py-2 rounded-lg text-xs shadow flex items-center">
+                            <i class="fa-solid fa-file-excel text-base mr-1.5"></i> Excel Turno (.xlsx)
                         </button>
-                        <button type="button" onclick="exportarCSV()" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-3.5 py-2 rounded-lg text-xs shadow flex items-center">
-                            <i class="fa-solid fa-file-csv text-base mr-1.5"></i> CSV (.csv)
+                        <button type="button" onclick="exportarCSVTurno()" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-3.5 py-2 rounded-lg text-xs shadow flex items-center">
+                            <i class="fa-solid fa-file-csv text-base mr-1.5"></i> CSV Turno (.csv)
                         </button>
-                        <button type="button" onclick="exportarPDF()" class="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-3.5 py-2 rounded-lg text-xs shadow flex items-center">
-                            <i class="fa-solid fa-file-pdf text-base mr-1.5"></i> Descargar PDF
-                        </button>
-                        <button type="button" onclick="compartirArchivos()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3.5 py-2 rounded-lg text-xs shadow flex items-center">
-                            <i class="fa-solid fa-share-nodes text-base mr-1.5"></i> Compartir
+                        <button type="button" onclick="exportarPDFTurno()" class="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-3.5 py-2 rounded-lg text-xs shadow flex items-center">
+                            <i class="fa-solid fa-file-pdf text-base mr-1.5"></i> Reporte PDF Ejecutivo
                         </button>
                     </div>
 
-                    <button type="button" onclick="finalizarOrden()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-6 py-2.5 rounded-lg text-sm shadow">
-                        Cerrar Conteo de la Orden
+                    <button type="button" onclick="abrirModalCerrarTurno()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-5 py-2.5 rounded-lg text-sm shadow">
+                        Cerrar Turno Actual
                     </button>
                 </div>
             </div>
         </section>
 
     </main>
+
+    <!-- MODAL: AGREGAR NUEVA ORDEN DE COMPRA -->
+    <div id="modal-nueva-orden" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-xl max-w-md w-full p-5 space-y-4 shadow-xl">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="font-bold text-slate-800 text-base flex items-center">
+                    <i class="fa-solid fa-file-circle-plus text-emerald-600 mr-2"></i> Registrar Nueva Orden de Compra
+                </h3>
+                <button type="button" onclick="cerrarModalNuevaOrden()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Orden de Compra (OC)</label>
+                    <input type="text" id="modal-oc-input" placeholder="Ej: OC-4405356" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Número de Empleado</label>
+                    <input type="text" id="modal-empleado-input" placeholder="Ej: 189703" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Total Cajas Solicitadas en la Orden</label>
+                    <input type="number" id="modal-cajas-input" placeholder="Ej: 1000" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t">
+                <button type="button" onclick="cerrarModalNuevaOrden()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs hover:bg-slate-50">Cancelar</button>
+                <button type="button" onclick="guardarNuevaOrden()" class="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700">Guardar e Iniciar Auditoría</button>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL DE DISCREPANCIAS (LIMPIO AL ABRIR) -->
     <div id="modal-discrepancia" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4 hidden">
@@ -287,44 +345,54 @@
         </div>
     </div>
 
+    <!-- MODAL: CERRAR TURNO -->
+    <div id="modal-cerrar-turno" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-xl max-w-md w-full p-5 space-y-4 shadow-xl">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="font-bold text-slate-800 text-base flex items-center">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i> Confirmar Cierre de Turno
+                </h3>
+                <button type="button" onclick="cerrarModalCerrarTurno()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-600">Al cerrar el turno actual, se archivarán las órdenes completadas en el historial, se limpiará el espacio de trabajo para iniciar una nueva jornada y se guardarán los registros. ¿Deseas descargar el reporte general antes de continuar?</p>
+            <div class="flex flex-col gap-2 pt-2 border-t">
+                <button type="button" onclick="exportarPDFTurno()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2 rounded-lg text-xs flex items-center justify-center shadow">
+                    <i class="fa-solid fa-file-pdf mr-1.5"></i> Descargar Reporte PDF del Turno y Cerrar
+                </button>
+                <button type="button" onclick="confirmarCierreTurnoSinDescarga()" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold py-2 rounded-lg text-xs shadow">
+                    Cerrar Turno sin Descargar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // ESTADO GLOBAL Y PERSISTENCIA LOCAL
-        let ordenData = {
-            oc: '',
-            empleado: '',
-            totalEsperado: 0,
-            horaInicio: '',
-            horaFin: '',
-            skus: [],
-            estado: 'En Proceso'
+        // ESTADO GLOBAL DEL TURNO Y HISTORIAL
+        let turnoData = {
+            idTurno: 'TURNO-' + new Date().toISOString().slice(0,10),
+            fechaInicio: new Date().toLocaleString(),
+            ordenes: [] // Array de órdenes { id, oc, empleado, totalEsperado, horaInicio, horaFin, skus: [], estado }
         };
 
+        let ordenActivaId = null;
         let skuActivoCodigo = null;
+        let historialTurnos = [];
 
         document.addEventListener("DOMContentLoaded", function() {
-            const saved = localStorage.getItem('ordenData_conteo_v2');
-            if (saved) {
-                try {
-                    ordenData = JSON.parse(saved);
-                    document.getElementById('oc-input').value = ordenData.oc || '';
-                    document.getElementById('empleado-input').value = ordenData.empleado || '';
-                    document.getElementById('total-esperado-oc-input').value = ordenData.totalEsperado || '';
-                    if(!ordenData.horaInicio) ordenData.horaInicio = new Date().toLocaleTimeString();
-                    actualizarListaSKUs();
-                    actualizarBadgeEstado();
-                } catch(e) { console.error(e); }
-            } else {
-                ordenData.horaInicio = new Date().toLocaleTimeString();
+            const savedTurno = localStorage.getItem('turnoData_activo');
+            const savedHistorial = localStorage.getItem('historial_turnos');
+            if(savedTurno) {
+                try { turnoData = JSON.parse(savedTurno); } catch(e){}
             }
+            if(savedHistorial) {
+                try { historialTurnos = JSON.parse(savedHistorial); } catch(e){}
+            }
+            actualizarTablaOrdenes();
         });
 
-        function guardarEstadoLocal() {
-            localStorage.setItem('ordenData_conteo_v2', JSON.stringify(ordenData));
-        }
-
-        function actualizarBadgeEstado() {
-            const badge = document.getElementById('header-status');
-            if(badge) badge.innerText = ordenData.estado;
+        function guardarTurnoLocal() {
+            localStorage.setItem('turnoData_activo', JSON.stringify(turnoData));
+            localStorage.setItem('historial_turnos', JSON.stringify(historialTurnos));
         }
 
         function cambiarPestana(paso) {
@@ -339,35 +407,159 @@
             if(targetSec) targetSec.classList.remove('hidden');
             if(targetBtn) targetBtn.className = "flex-1 py-2 px-3 rounded-lg text-center bg-indigo-50 text-indigo-700 font-bold border border-indigo-200 transition";
 
-            if(paso === 2 && ordenData.skus.length > 0 && !skuActivoCodigo) {
-                skuActivoCodigo = ordenData.skus[0].codigo;
-                poblarSelectorSKU();
+            if(paso === 2) {
+                if(!ordenActivaId && turnoData.ordenes.length > 0) {
+                    ordenActivaId = turnoData.ordenes[0].id;
+                }
+                actualizarVistaOrdenActiva();
             }
             if(paso === 3) {
-                renderizarResumenFinal();
-                renderizarResumenDiscrepancias();
+                renderizarResumenTurno();
             }
             window.scrollTo(0,0);
         }
 
-        function agregarSKU() {
+        // GESTIÓN DE MODAL NUEVA ORDEN
+        function abrirModalNuevaOrden() {
+            document.getElementById('modal-oc-input').value = '';
+            document.getElementById('modal-empleado-input').value = '';
+            document.getElementById('modal-cajas-input').value = '';
+            document.getElementById('modal-nueva-orden').classList.remove('hidden');
+        }
+
+        function cerrarModalNuevaOrden() {
+            document.getElementById('modal-nueva-orden').classList.add('hidden');
+        }
+
+        function guardarNuevaOrden() {
+            const oc = document.getElementById('modal-oc-input').value.trim();
+            const empleado = document.getElementById('modal-empleado-input').value.trim();
+            const totalEsperado = parseInt(document.getElementById('modal-cajas-input').value) || 0;
+
+            if(!oc || !empleado || totalEsperado <= 0) {
+                alert('Por favor completa todos los campos con valores válidos.');
+                return;
+            }
+
+            // Validar orden duplicada
+            if(turnoData.ordenes.find(o => o.oc === oc)) {
+                alert('¡Advertencia! Ya existe una orden registrada con este mismo número de OC en el turno actual.');
+                return;
+            }
+
+            const nuevaOrden = {
+                id: 'OC-' + Date.now(),
+                oc: oc,
+                empleado: empleado,
+                totalEsperado: totalEsperado,
+                horaInicio: new Date().toLocaleTimeString(),
+                horaFin: '',
+                skus: [],
+                estado: 'En Proceso'
+            };
+
+            turnoData.ordenes.push(nuevaOrden);
+            guardarTurnoLocal();
+            cerrarModalNuevaOrden();
+
+            ordenActivaId = nuevaOrden.id;
+            actualizarTablaOrdenes();
+            cambiarPestana(2);
+        }
+
+        function actualizarTablaOrdenes() {
+            const tbody = document.getElementById('tabla-ordenes-body');
+            const contador = document.getElementById('contador-ordenes');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            if(contador) contador.innerText = turnoData.ordenes.length;
+
+            if(turnoData.ordenes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">No hay órdenes registradas en este turno.</td></tr>';
+                return;
+            }
+
+            turnoData.ordenes.forEach(o => {
+                let totalContado = 0;
+                o.skus.forEach(s => totalContado += s.auditadas);
+
+                let badgeEstado = '<span class="bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded text-2xs">En Proceso</span>';
+                if(o.estado === 'Finalizado sin diferencias') badgeEstado = '<span class="bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded text-2xs">Sin Diferencias</span>';
+                if(o.estado === 'Finalizado con discrepancias') badgeEstado = '<span class="bg-indigo-100 text-indigo-800 font-semibold px-2 py-0.5 rounded text-2xs">Con Discrepancias</span>';
+
+                const tr = document.createElement('tr');
+                tr.className = "border-t border-slate-100 hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-800">${o.oc}</td>
+                    <td class="p-3">${o.empleado}</td>
+                    <td class="p-3">${o.totalEsperado}</td>
+                    <td class="p-3 font-semibold">${totalContado}</td>
+                    <td class="p-3">${o.skus.length} SKUs</td>
+                    <td class="p-3">${badgeEstado}</td>
+                    <td class="p-3 text-center space-x-2">
+                        <button type="button" onclick="seleccionarOrden('${o.id}')" class="bg-indigo-600 text-white px-2.5 py-1 rounded text-xs hover:bg-indigo-700">Auditar</button>
+                        <button type="button" onclick="eliminarOrden('${o.id}')" class="text-rose-600 hover:text-rose-800 px-1"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function seleccionarOrden(id) {
+            ordenActivaId = id;
+            cambiarPestana(2);
+        }
+
+        function eliminarOrden(id) {
+            if(confirm('¿Estás seguro de eliminar esta orden del turno?')) {
+                turnoData.ordenes = turnoData.ordenes.filter(o => o.id !== id);
+                if(ordenActivaId === id) ordenActivaId = null;
+                guardarTurnoLocal();
+                actualizarTablaOrdenes();
+            }
+        }
+
+        function obtenerOrdenActiva() {
+            return turnoData.ordenes.find(o => o.id === ordenActivaId);
+        }
+
+        function actualizarVistaOrdenActiva() {
+            const orden = obtenerOrdenActiva();
+            const infoOrden = document.getElementById('info-orden-activa');
+            if(!orden) {
+                if(infoOrden) infoOrden.innerText = 'Selecciona una orden en la pestaña 1';
+                document.getElementById('panel-conteo-sku').classList.add('hidden');
+                return;
+            }
+            if(infoOrden) infoOrden.innerText = `OC: ${orden.oc} (Empleado: ${orden.empleado} - Esperadas: ${orden.totalEsperado} cajas)`;
+            actualizarListaSKUsOrdenActiva();
+        }
+
+        // GESTIÓN DE SKUs DE LA ORDEN ACTIVA
+        function agregarSKUOrdenActiva() {
+            const orden = obtenerOrdenActiva();
+            if(!orden) {
+                alert('Selecciona o crea una orden activa primero.');
+                cambiarPestana(1);
+                return;
+            }
+
             const codigoInput = document.getElementById('sku-codigo-input');
             const cajasInput = document.getElementById('sku-cajas-input');
-
             const codigo = codigoInput.value.trim();
             const cajas = parseInt(cajasInput.value);
 
             if(!codigo || isNaN(cajas) || cajas <= 0) {
-                alert('Por favor ingresa un código SKU válido y la cantidad de cajas esperadas.');
+                alert('Ingresa un SKU válido y cajas esperadas.');
                 return;
             }
 
-            if(ordenData.skus.find(s => s.codigo === codigo)) {
-                alert('Este SKU ya está registrado en la orden.');
+            if(orden.skus.find(s => s.codigo === codigo)) {
+                alert('Este SKU ya está registrado en esta orden.');
                 return;
             }
 
-            ordenData.skus.push({
+            orden.skus.push({
                 codigo: codigo,
                 esperadas: cajas,
                 auditadas: 0,
@@ -378,96 +570,86 @@
 
             codigoInput.value = '';
             cajasInput.value = '';
-
-            actualizarListaSKUs();
-            guardarEstadoLocal();
+            guardarTurnoLocal();
+            actualizarListaSKUsOrdenActiva();
         }
 
-        function eliminarSKU(codigo) {
-            if(confirm(`¿Estás seguro de eliminar el SKU ${codigo}?`)) {
-                ordenData.skus = ordenData.skus.filter(s => s.codigo !== codigo);
-                actualizarListaSKUs();
-                guardarEstadoLocal();
-            }
+        function eliminarSKUOrdenActiva(codigo) {
+            const orden = obtenerOrdenActiva();
+            if(!orden) return;
+            orden.skus = orden.skus.filter(s => s.codigo !== codigo);
+            guardarTurnoLocal();
+            actualizarListaSKUsOrdenActiva();
         }
 
-        function actualizarListaSKUs() {
-            const tbody = document.getElementById('tabla-skus-body');
-            if(!tbody) return;
+        function actualizarListaSKUsOrdenActiva() {
+            const orden = obtenerOrdenActiva();
+            const tbody = document.getElementById('tabla-skus-orden-body');
+            const badge = document.getElementById('badge-sku-count');
+            if(!tbody || !orden) return;
             tbody.innerHTML = '';
+            if(badge) badge.innerText = `${orden.skus.length} SKUs`;
 
-            let totalSKUsCajas = 0;
-
-            if(ordenData.skus.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-slate-400">No hay SKUs registrados aún.</td></tr>';
-            } else {
-                ordenData.skus.forEach(s => {
-                    totalSKUsCajas += s.esperadas;
-                    const tr = document.createElement('tr');
-                    tr.className = "border-t border-slate-100";
-                    tr.innerHTML = `
-                        <td class="p-2.5 font-bold text-slate-700">${s.codigo}</td>
-                        <td class="p-2.5">${s.esperadas} cajas</td>
-                        <td class="p-2.5 text-center">
-                            <button type="button" onclick="eliminarSKU('${s.codigo}')" class="text-rose-600 hover:text-rose-800 px-2 py-1">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            }
-
-            const sumElem = document.getElementById('sum-skus-esperadas');
-            const badgeElem = document.getElementById('badge-sku-count');
-            if(sumElem) sumElem.innerText = `${totalSKUsCajas} cajas`;
-            if(badgeElem) badgeElem.innerText = `${ordenData.skus.length} SKUs agregados`;
-        }
-
-        function poblarSelectorSKU() {
-            const select = document.getElementById('sku-selector');
-            if(!select) return;
-            select.innerHTML = '';
-            ordenData.skus.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.codigo;
-                opt.innerText = `SKU: ${s.codigo} (${s.esperadas} cajas esperadas)`;
-                if(s.codigo === skuActivoCodigo) opt.selected = true;
-                select.appendChild(opt);
-            });
-            seleccionarSKUActivo();
-        }
-
-        function iniciarCaptura() {
-            ordenData.oc = document.getElementById('oc-input').value.trim();
-            ordenData.empleado = document.getElementById('empleado-input').value.trim();
-            ordenData.totalEsperado = parseInt(document.getElementById('total-esperado-oc-input').value) || 0;
-
-            if(!ordenData.oc || !ordenData.empleado || ordenData.skus.length === 0) {
-                alert('Completa la información general (Orden, Empleado) y agrega al menos un SKU.');
+            if(orden.skus.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-slate-400">No hay SKUs en esta orden.</td></tr>';
+                document.getElementById('panel-conteo-sku').classList.add('hidden');
                 return;
             }
 
-            guardarEstadoLocal();
-            poblarSelectorSKU();
-            cambiarPestana(2);
+            orden.skus.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.className = "border-t border-slate-100";
+                tr.innerHTML = `
+                    <td class="p-2.5 font-bold text-slate-700">${s.codigo}</td>
+                    <td class="p-2.5">${s.esperadas} cajas</td>
+                    <td class="p-2.5 text-center space-x-2">
+                        <button type="button" onclick="seleccionarSKUConteoDirecto('${s.codigo}')" class="bg-indigo-100 text-indigo-700 font-semibold px-2 py-1 rounded text-xs hover:bg-indigo-200">Tarimas</button>
+                        <button type="button" onclick="eliminarSKUOrdenActiva('${s.codigo}')" class="text-rose-600 hover:text-rose-800"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            poblarSelectorSKUConteo();
         }
 
-        function seleccionarSKUActivo() {
-            const select = document.getElementById('sku-selector');
-            if(!select) return;
+        function poblarSelectorSKUConteo() {
+            const orden = obtenerOrdenActiva();
+            const select = document.getElementById('sku-selector-conteo');
+            if(!select || !orden) return;
+            select.innerHTML = '';
+            orden.skus.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.codigo;
+                opt.innerText = `SKU: ${s.codigo} (${s.esperadas} esp)`;
+                if(s.codigo === skuActivoCodigo) opt.selected = true;
+                select.appendChild(opt);
+            });
+            if(orden.skus.length > 0 && !skuActivoCodigo) {
+                skuActivoCodigo = orden.skus[0].codigo;
+            }
+            seleccionarSKUConteo();
+        }
+
+        function seleccionarSKUConteoDirecto(codigo) {
+            skuActivoCodigo = codigo;
+            const select = document.getElementById('sku-selector-conteo');
+            if(select) select.value = codigo;
+            seleccionarSKUConteo();
+        }
+
+        function seleccionarSKUConteo() {
+            const orden = obtenerOrdenActiva();
+            const select = document.getElementById('sku-selector-conteo');
+            if(!select || !orden) return;
             skuActivoCodigo = select.value;
-            const sku = ordenData.skus.find(s => s.codigo === skuActivoCodigo);
+            const sku = orden.skus.find(s => s.codigo === skuActivoCodigo);
 
             if(!sku) return;
 
-            const panel = document.getElementById('panel-conteo-sku');
-            if(panel) panel.classList.remove('hidden');
-            
-            const titleElem = document.getElementById('sku-activo-titulo');
-            const espElem = document.getElementById('sku-activo-esperadas');
-            if(titleElem) titleElem.innerText = sku.codigo;
-            if(espElem) espElem.innerText = sku.esperadas;
+            document.getElementById('panel-conteo-sku').classList.remove('hidden');
+            document.getElementById('sku-activo-titulo').innerText = sku.codigo;
+            document.getElementById('sku-activo-esperadas').innerText = sku.esperadas;
 
             renderizarTarimasSKU(sku);
         }
@@ -491,7 +673,7 @@
             container.innerHTML = '';
 
             if(sku.tarimas.length === 0) {
-                container.innerHTML = '<div class="text-xs text-slate-400 p-3 bg-slate-50 rounded-lg text-center">No hay tarimas registradas. Presiona "Agregar Tarima" para comenzar.</div>';
+                container.innerHTML = '<div class="text-xs text-slate-400 p-3 bg-slate-50 rounded-lg text-center">No hay tarimas. Presiona "Agregar Tarima".</div>';
                 return;
             }
 
@@ -509,9 +691,7 @@
                             <span class="text-xs font-semibold text-slate-600 w-16">Cama ${cIdx + 1}:</span>
                             <input type="number" value="${cama.cantidad}" oninput="actualizarCantidadCamaDirecto('${sku.codigo}', ${tIdx}, ${cIdx}, this.value)" class="w-24 border border-slate-300 rounded px-2 py-1 text-xs text-center font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
                             <span class="text-xs text-slate-400">cajas</span>
-                            <button type="button" onclick="eliminarCama('${sku.codigo}', ${tIdx}, ${cIdx})" class="text-rose-500 hover:text-rose-700 text-xs px-2" title="Eliminar Cama">
-                                <i class="fa-solid fa-minus-circle"></i>
-                            </button>
+                            <button type="button" onclick="eliminarCama('${sku.codigo}', ${tIdx}, ${cIdx})" class="text-rose-500 hover:text-rose-700 text-xs px-2"><i class="fa-solid fa-minus-circle"></i></button>
                         </div>
                     `;
                 });
@@ -520,58 +700,52 @@
                     <div class="flex justify-between items-center border-b pb-2">
                         <span class="font-bold text-slate-700 text-xs">Tarima ${tIdx + 1} (Total: ${totalTarima} cajas)</span>
                         <div class="space-x-2">
-                            <button type="button" onclick="agregarCama('${sku.codigo}', ${tIdx})" class="text-xs bg-indigo-100 text-indigo-700 font-semibold px-2 py-1 rounded hover:bg-indigo-200">
-                                <i class="fa-solid fa-plus text-2xs mr-1"></i> Cama
-                            </button>
-                            <button type="button" onclick="eliminarTarima('${sku.codigo}', ${tIdx})" class="text-xs bg-rose-100 text-rose-700 font-semibold px-2 py-1 rounded hover:bg-rose-200" title="Eliminar Tarima">
-                                <i class="fa-solid fa-trash"></i> Tarima
-                            </button>
+                            <button type="button" onclick="agregarCama('${sku.codigo}', ${tIdx})" class="text-xs bg-indigo-100 text-indigo-700 font-semibold px-2 py-1 rounded">+ Cama</button>
+                            <button type="button" onclick="eliminarTarima('${sku.codigo}', ${tIdx})" class="text-xs bg-rose-100 text-rose-700 font-semibold px-2 py-1 rounded">Borrar Tarima</button>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                        ${camasHTML || '<span class="text-xs text-slate-400">Sin camas agregadas.</span>'}
+                        ${camasHTML || '<span class="text-xs text-slate-400">Sin camas.</span>'}
                     </div>
                 `;
                 container.appendChild(tDiv);
             });
-            guardarEstadoLocal();
+            guardarTurnoLocal();
         }
 
-        function agregarTarima() {
-            const sku = ordenData.skus.find(s => s.codigo === skuActivoCodigo);
+        function agregarTarimaOrdenActiva() {
+            const sku = obtenerOrdenActiva().skus.find(s => s.codigo === skuActivoCodigo);
             if(!sku) return;
             sku.tarimas.push({ id: sku.tarimas.length + 1, camas: [{ id: 1, cantidad: 0 }] });
             renderizarTarimasSKU(sku);
         }
 
         function eliminarTarima(skuCodigo, tIdx) {
-            const sku = ordenData.skus.find(s => s.codigo === skuCodigo);
+            const sku = obtenerOrdenActiva().skus.find(s => s.codigo === skuCodigo);
             if(!sku) return;
             sku.tarimas.splice(tIdx, 1);
             renderizarTarimasSKU(sku);
         }
 
         function agregarCama(skuCodigo, tIdx) {
-            const sku = ordenData.skus.find(s => s.codigo === skuCodigo);
+            const sku = obtenerOrdenActiva().skus.find(s => s.codigo === skuCodigo);
             if(!sku) return;
             sku.tarimas[tIdx].camas.push({ id: sku.tarimas[tIdx].camas.length + 1, cantidad: 0 });
             renderizarTarimasSKU(sku);
         }
 
         function eliminarCama(skuCodigo, tIdx, cIdx) {
-            const sku = ordenData.skus.find(s => s.codigo === skuCodigo);
+            const sku = obtenerOrdenActiva().skus.find(s => s.codigo === skuCodigo);
             if(!sku) return;
             sku.tarimas[tIdx].camas.splice(cIdx, 1);
             renderizarTarimasSKU(sku);
         }
 
-        // Actualización directa sin perder el foco del input numérico
         function actualizarCantidadCamaDirecto(skuCodigo, tIdx, cIdx, valor) {
-            const sku = ordenData.skus.find(s => s.codigo === skuCodigo);
+            const sku = obtenerOrdenActiva().skus.find(s => s.codigo === skuCodigo);
             if(!sku) return;
             sku.tarimas[tIdx].camas[cIdx].cantidad = parseInt(valor) || 0;
             
-            // Recálculo sin reconstruir todo el DOM del input activo
             let totalAuditado = 0;
             sku.tarimas.forEach(t => {
                 t.camas.forEach(c => totalAuditado += (c.cantidad || 0));
@@ -583,40 +757,45 @@
             if(audElem) audElem.innerText = totalAuditado;
             const diff = totalAuditado - sku.esperadas;
             if(diffElem) diffElem.innerText = (diff > 0 ? `+${diff}` : diff);
-            guardarEstadoLocal();
+            guardarTurnoLocal();
         }
 
-        function marcarSKUFinalizado() {
-            const sku = ordenData.skus.find(s => s.codigo === skuActivoCodigo);
-            if(!sku) return;
-            sku.finalizado = true;
-            guardarEstadoLocal();
-            alert(`El conteo del SKU ${sku.codigo} ha sido concluido y guardado.`);
+        function marcarOrdenConcluida() {
+            const orden = obtenerOrdenActiva();
+            if(!orden) return;
+            
+            let hayDiff = false;
+            orden.skus.forEach(s => {
+                if(s.auditadas !== s.esperadas || s.discrepancias.length > 0) hayDiff = true;
+            });
+
+            orden.estado = hayDiff ? 'Finalizado con discrepancias' : 'Finalizado sin diferencias';
+            orden.horaFin = new Date().toLocaleTimeString();
+            guardarTurnoLocal();
+            actualizarTablaOrdenes();
+            alert(`Orden ${orden.oc} concluida y guardada.`);
+            cambiarPestana(3);
         }
 
+        // DISCREPANCIAS
         function abrirModalDiscrepancia() {
-            // Limpiar formulario al abrir (Requisito 5)
             document.getElementById('disc-tipo').value = 'Faltante';
             document.getElementById('disc-cantidad').value = '';
             document.getElementById('disc-tarima').value = '';
             document.getElementById('disc-cama').value = '';
             document.getElementById('disc-obs').value = '';
-
-            const modal = document.getElementById('modal-discrepancia');
-            if(modal) modal.classList.remove('hidden');
+            document.getElementById('modal-discrepancia').classList.remove('hidden');
         }
 
         function cerrarModalDiscrepancia() {
-            const modal = document.getElementById('modal-discrepancia');
-            if(modal) modal.classList.add('hidden');
+            document.getElementById('modal-discrepancia').classList.add('hidden');
         }
 
         function guardarDiscrepancia() {
-            const sku = ordenData.skus.find(s => s.codigo === skuActivoCodigo);
-            if(!sku) {
-                alert('Selecciona un SKU activo primero.');
-                return;
-            }
+            const orden = obtenerOrdenActiva();
+            if(!orden) return;
+            const sku = orden.skus.find(s => s.codigo === skuActivoCodigo);
+            if(!sku) { alert('Selecciona un SKU activo.'); return; }
 
             const tipo = document.getElementById('disc-tipo').value;
             const cantidad = parseInt(document.getElementById('disc-cantidad').value) || 0;
@@ -624,226 +803,159 @@
             const cama = parseInt(document.getElementById('disc-cama').value) || 1;
             const obs = document.getElementById('disc-obs').value.trim();
 
-            if(cantidad <= 0) {
-                alert('Ingresa una cantidad válida de cajas.');
-                return;
-            }
+            if(cantidad <= 0) { alert('Ingresa cantidad válida.'); return; }
 
             sku.discrepancias.push({
-                tipo,
-                cantidad,
-                tarima,
-                cama,
-                obs,
-                empleado: ordenData.empleado,
-                fechaHora: new Date().toLocaleString()
+                tipo, cantidad, tarima, cama, obs, empleado: orden.empleado, fechaHora: new Date().toLocaleString()
             });
 
             cerrarModalDiscrepancia();
-            guardarEstadoLocal();
-            alert('Discrepancia/Merma registrada correctamente.');
-            renderizarResumenDiscrepancias();
+            guardarTurnoLocal();
+            alert('Discrepancia guardada correctamente.');
         }
 
-        function renderizarResumenFinal() {
-            const tbody = document.getElementById('tabla-resumen-body');
+        // RESUMEN Y CONSOLIDADOS TURNO
+        function renderizarResumenTurno() {
+            const tbody = document.getElementById('tabla-resumen-turno-body');
             if(!tbody) return;
             tbody.innerHTML = '';
 
-            if(ordenData.skus.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-slate-400">No hay SKUs registrados.</td></tr>';
+            let totalOrd = turnoData.ordenes.length;
+            let totalSolG = 0, totalContG = 0, totalDiscG = 0;
+
+            if(totalOrd === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-slate-400">No hay órdenes registradas.</td></tr>';
+                document.getElementById('ind-total-ordenes').innerText = '0';
+                document.getElementById('ind-cajas-sol').innerText = '0';
+                document.getElementById('ind-cajas-cont').innerText = '0';
+                document.getElementById('ind-disc-totales').innerText = '0';
                 return;
             }
 
-            ordenData.skus.forEach(s => {
-                let totalTarimas = s.tarimas.length;
-                let totalCamas = 0;
-                s.tarimas.forEach(t => totalCamas += t.camas.length);
+            turnoData.ordenes.forEach(o => {
+                let espO = o.totalEsperado;
+                let contO = 0;
+                let skusO = o.skus.length;
+                let faltO = 0, sobO = 0, merO = 0;
 
-                let faltantes = 0, sobrantes = 0, mermas = 0;
-                const diff = s.auditadas - s.esperadas;
-                if(diff < 0) faltantes = Math.abs(diff);
-                if(diff > 0) sobrantes = diff;
-
-                s.discrepancias.forEach(d => {
-                    if(d.tipo === 'Merma') mermas += d.cantidad;
+                o.skus.forEach(s => {
+                    contO += s.auditadas;
+                    let diff = s.auditadas - s.esperadas;
+                    if(diff < 0) faltO += Math.abs(diff);
+                    if(diff > 0) sobO += diff;
+                    s.discrepancias.forEach(d => { if(d.tipo === 'Merma') merO += d.cantidad; });
                 });
 
-                let estadoBadge = '<span class="bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded text-2xs">Sin diferencias</span>';
-                if(diff !== 0 || s.discrepancias.length > 0) {
-                    estadoBadge = '<span class="bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded text-2xs">Validado con discrepancia</span>';
-                }
+                totalSolG += espO;
+                totalContG += contO;
+                totalDiscG += (faltO + sobO + merO);
+
+                let badgeEstado = '<span class="bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded text-2xs">En Proceso</span>';
+                if(o.estado.includes('sin')) badgeEstado = '<span class="bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded text-2xs">Sin Diferencias</span>';
+                if(o.estado.includes('con')) badgeEstado = '<span class="bg-indigo-100 text-indigo-800 font-semibold px-2 py-0.5 rounded text-2xs">Con Discrepancia</span>';
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="p-3 font-bold text-slate-800">${s.codigo}</td>
-                    <td class="p-3">${s.esperadas}</td>
-                    <td class="p-3 font-bold">${s.auditadas}</td>
-                    <td class="p-3">${totalTarimas}</td>
-                    <td class="p-3">${totalCamas}</td>
-                    <td class="p-3 text-rose-600 font-bold">${faltantes}</td>
-                    <td class="p-3 text-indigo-600 font-bold">${sobrantes}</td>
-                    <td class="p-3 text-amber-600 font-bold">${mermas}</td>
-                    <td class="p-3">${estadoBadge}</td>
+                    <td class="p-3 font-bold text-slate-800">${o.oc}</td>
+                    <td class="p-3">${o.empleado}</td>
+                    <td class="p-3">${o.horaInicio}</td>
+                    <td class="p-3">${espO}</td>
+                    <td class="p-3 font-bold">${contO}</td>
+                    <td class="p-3">${skusO}</td>
+                    <td class="p-3 text-rose-600 font-bold">${faltO}</td>
+                    <td class="p-3 text-indigo-600 font-bold">${sobO}</td>
+                    <td class="p-3 text-amber-600 font-bold">${merO}</td>
+                    <td class="p-3">${badgeEstado}</td>
                 `;
                 tbody.appendChild(tr);
             });
+
+            document.getElementById('ind-total-ordenes').innerText = totalOrd;
+            document.getElementById('ind-cajas-sol').innerText = totalSolG;
+            document.getElementById('ind-cajas-cont').innerText = totalContG;
+            document.getElementById('ind-disc-totales').innerText = totalDiscG;
         }
 
-        function renderizarResumenDiscrepancias() {
-            const container = document.getElementById('resumen-discrepancias-container');
-            if(!container) return;
-            container.innerHTML = '';
-
-            let totalFaltantesG = 0;
-            let totalSobrantesG = 0;
-            let totalMermasG = 0;
-            let htmlDetalle = '';
-
-            ordenData.skus.forEach(s => {
-                let fSku = 0, sSku = 0, mSku = 0;
-                s.discrepancias.forEach(d => {
-                    if(d.tipo === 'Faltante') fSku += d.cantidad;
-                    if(d.tipo === 'Sobrante') sSku += d.cantidad;
-                    if(d.tipo === 'Merma') mSku += d.cantidad;
-                });
-                totalFaltantesG += fSku;
-                totalSobrantesG += sSku;
-                totalMermasG += mSku;
-
-                if(s.discrepancias.length > 0) {
-                    htmlDetalle += `<div class="font-bold text-slate-700 mt-2">SKU: ${s.codigo}</div>`;
-                    s.discrepancias.forEach(d => {
-                        htmlDetalle += `<div class="pl-3 text-xs text-slate-600">• [${d.tipo}] ${d.cantidad} cajas (Tarima ${d.tarima}, Cama ${d.cama}) - ${d.obs || 'Sin obs'} (${d.fechaHora})</div>`;
-                    });
-                }
-            });
-
-            const resumenTotales = `
-                <div class="grid grid-cols-3 gap-2 mb-3 text-center">
-                    <div class="bg-rose-50 p-2 rounded-lg border border-rose-200">
-                        <span class="block text-rose-600 font-semibold">Total Faltantes</span>
-                        <span class="text-base font-bold text-rose-800">${totalFaltantesG}</span>
-                    </div>
-                    <div class="bg-indigo-50 p-2 rounded-lg border border-indigo-200">
-                        <span class="block text-indigo-600 font-semibold">Total Sobrantes</span>
-                        <span class="text-base font-bold text-indigo-800">${totalSobrantesG}</span>
-                    </div>
-                    <div class="bg-amber-50 p-2 rounded-lg border border-amber-200">
-                        <span class="block text-amber-600 font-semibold">Total Mermas</span>
-                        <span class="text-base font-bold text-amber-800">${totalMermasG}</span>
-                    </div>
-                </div>
-            `;
-
-            container.innerHTML = resumenTotales + (htmlDetalle || '<p class="text-slate-400 text-xs">No hay discrepancias registradas en los SKUs.</p>');
-        }
-
-        function exportarExcel() {
-            if(typeof XLSX === 'undefined') {
-                alert('La librería de Excel no está disponible.');
-                return;
-            }
+        // EXPORTAR EXCEL CONSOLIDADO
+        function exportarExcelTurno() {
+            if(typeof XLSX === 'undefined') { alert('XLSX no disponible.'); return; }
             const wb = XLSX.utils.book_new();
 
-            const resumenData = [
-                ["DATOS GENERALES DE LA ORDEN DE CONTEO"],
-                ["Orden de Compra", ordenData.oc],
-                ["Empleado", ordenData.empleado],
-                ["Fecha y Hora", new Date().toLocaleString()],
-                ["Estado", ordenData.estado],
+            let turnoResumen = [
+                ["REPORTE GENERAL DEL TURNO"],
+                ["ID Turno", turnoData.idTurno],
+                ["Fecha Inicio", turnoData.fechaInicio],
+                ["Total Órdenes", turnoData.ordenes.length],
                 [],
-                ["RESUMEN POR SKU"],
-                ["SKU", "Esperadas", "Contabilizadas", "Faltante", "Sobrante", "Merma"]
+                ["OC", "Empleado", "Esperadas", "Contabilizadas", "Estado"]
             ];
-
-            ordenData.skus.forEach(s => {
-                let diff = s.auditadas - s.esperadas;
-                let f = diff < 0 ? Math.abs(diff) : 0;
-                let sob = diff > 0 ? diff : 0;
-                let m = 0;
-                s.discrepancias.forEach(d => { if(d.tipo==='Merma') m += d.cantidad; });
-                resumenData.push([s.codigo, s.esperadas, s.auditadas, f, sob, m]);
+            turnoData.ordenes.forEach(o => {
+                let c = 0; o.skus.forEach(s=>c+=s.auditadas);
+                turnoResumen.push([o.oc, o.empleado, o.totalEsperado, c, o.estado]);
             });
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(turnoResumen), "Resumen Turno");
 
-            const ws1 = XLSX.utils.aoa_to_sheet(resumenData);
-            XLSX.utils.book_append_sheet(wb, ws1, "Resumen General");
-
-            const detalleData = [["SKU", "Tarima", "Cama", "Cajas Contabilizadas"]];
-            ordenData.skus.forEach(s => {
-                s.tarimas.forEach((t, tIdx) => {
-                    t.camas.forEach((c, cIdx) => {
-                        detalleData.push([String(s.codigo), `Tarima ${tIdx+1}`, `Cama ${cIdx+1}`, c.cantidad]);
-                    });
-                });
-            });
-            const ws2 = XLSX.utils.aoa_to_sheet(detalleData);
-            XLSX.utils.book_append_sheet(wb, ws2, "Detalle Conteos");
-
-            const discData = [["SKU", "Tipo", "Cantidad", "Tarima", "Cama", "Observaciones", "Empleado", "Fecha"]];
-            ordenData.skus.forEach(s => {
-                s.discrepancias.forEach(d => {
-                    discData.push([String(s.codigo), d.tipo, d.cantidad, d.tarima, d.cama, d.obs, d.empleado, d.fechaHora]);
-                });
-            });
-            const ws3 = XLSX.utils.aoa_to_sheet(discData);
-            XLSX.utils.book_append_sheet(wb, ws3, "Discrepancias");
-
-            XLSX.writeFile(wb, `Conteo_OC_${ordenData.oc || 'General'}.xlsx`);
+            XLSX.writeFile(wb, `Reporte_Turno_${turnoData.idTurno}.xlsx`);
         }
 
-        // CSV ESTRUCTURADO EN 4 BLOQUES (Requisito 8)
-        function exportarCSV() {
+        // EXPORTAR CSV CONSOLIDADO (SIN COLUMNA TIPO_REGISTRO - Requisito 5)
+        function exportarCSVTurno() {
             let csvLines = [];
             let fechaActual = new Date().toLocaleDateString();
 
-            // Totales generales
-            let totalAuditadoG = 0, totalTarimasG = 0, totalCamasG = 0, totalFaltantesG = 0, totalSobrantesG = 0, totalMermasG = 0;
-            ordenData.skus.forEach(s => {
-                totalAuditadoG += s.auditadas;
-                totalTarimasG += s.tarimas.length;
-                s.tarimas.forEach(t => totalCamasG += t.camas.length);
-                let diff = s.auditadas - s.esperadas;
-                if(diff < 0) totalFaltantesG += Math.abs(diff);
-                if(diff > 0) totalSobrantesG += diff;
-                s.discrepancias.forEach(d => { if(d.tipo === 'Merma') totalMermasG += d.cantidad; });
+            // BLOQUE 1: RESUMEN GENERAL DE ORDENES
+            csvLines.push("ORDEN_COMPRA,EMPLEADO,FECHA,HORA_INICIO,HORA_FIN,CAJAS_REQUERIDAS,CAJAS_CONTABILIZADAS,TOTAL_TARIMAS,TOTAL_CAMAS,TOTAL_FALTANTES,TOTAL_SOBRANTES,TOTAL_MERMAS,ESTADO");
+            turnoData.ordenes.forEach(o => {
+                let contO = 0, tarO = 0, camO = 0, faltO = 0, sobO = 0, merO = 0;
+                o.skus.forEach(s => {
+                    contO += s.auditadas;
+                    tarO += s.tarimas.length;
+                    s.tarimas.forEach(t => camO += t.camas.length);
+                    let diff = s.auditadas - s.esperadas;
+                    if(diff < 0) faltO += Math.abs(diff);
+                    if(diff > 0) sobO += diff;
+                    s.discrepancias.forEach(d => { if(d.tipo==='Merma') merO += d.cantidad; });
+                });
+                csvLines.push(`${o.oc},${o.empleado},${fechaActual},${o.horaInicio||''},${o.horaFin||''},${o.totalEsperado},${contO},${tarO},${camO},${faltO},${sobO},${merO},"${o.estado}"`);
             });
-
-            // BLOQUE 1: RESUMEN GENERAL
-            csvLines.push("TIPO_REGISTRO,ORDEN_COMPRA,EMPLEADO,FECHA,HORA_INICIO,HORA_FIN,CAJAS_REQUERIDAS,CAJAS_CONTABILIZADAS,TOTAL_TARIMAS,TOTAL_CAMAS,TOTAL_FALTANTES,TOTAL_SOBRANTES,TOTAL_MERMAS,ESTADO");
-            csvLines.push(`RESUMEN_GENERAL,${ordenData.oc},${ordenData.empleado},${fechaActual},${ordenData.horaInicio || ''},${ordenData.horaFin || ''},${ordenData.totalEsperado},${totalAuditadoG},${totalTarimasG},${totalCamasG},${totalFaltantesG},${totalSobrantesG},${totalMermasG},${ordenData.estado}`);
             csvLines.push("");
 
             // BLOQUE 2: DESGLOSE POR SKU
-            csvLines.push("TIPO_REGISTRO,ORDEN_COMPRA,EMPLEADO,SKU,CAJAS_REQUERIDAS,CAJAS_CONTABILIZADAS,DIFERENCIA,TOTAL_TARIMAS,TOTAL_CAMAS,FALTANTES,SOBRANTES,MERMAS,ESTADO_VALIDACION");
-            ordenData.skus.forEach(s => {
-                let diff = s.auditadas - s.esperadas;
-                let f = diff < 0 ? Math.abs(diff) : 0;
-                let sob = diff > 0 ? diff : 0;
-                let m = 0;
-                s.discrepancias.forEach(d => { if(d.tipo === 'Merma') m += d.cantidad; });
-                let estVal = (diff === 0 && s.discrepancias.length === 0) ? "Sin diferencias" : "Validado con discrepancia";
-                csvLines.push(`DESGLOSE_SKU,${ordenData.oc},${ordenData.empleado},"${s.codigo}",${s.esperadas},${s.auditadas},${diff},${s.tarimas.length},${s.tarimas.reduce((acc,t)=>acc+t.camas.length,0)},${f},${sob},${m},"${estVal}"`);
+            csvLines.push("ORDEN_COMPRA,EMPLEADO,SKU,CAJAS_REQUERIDAS,CAJAS_CONTABILIZADAS,DIFERENCIA,TOTAL_TARIMAS,TOTAL_CAMAS,FALTANTES,SOBRANTES,MERMAS,ESTADO_VALIDACION");
+            turnoData.ordenes.forEach(o => {
+                o.skus.forEach(s => {
+                    let diff = s.auditadas - s.esperadas;
+                    let f = diff < 0 ? Math.abs(diff) : 0;
+                    let sob = diff > 0 ? diff : 0;
+                    let m = 0;
+                    s.discrepancias.forEach(d => { if(d.tipo==='Merma') m += d.cantidad; });
+                    let estVal = (diff === 0 && s.discrepancias.length === 0) ? "Sin diferencias" : "Validado con discrepancia";
+                    csvLines.push(`${o.oc},${o.empleado},"${s.codigo}",${s.esperadas},${s.auditadas},${diff},${s.tarimas.length},${s.tarimas.reduce((acc,t)=>acc+t.camas.length,0)},${f},${sob},${m},"${estVal}"`);
+                });
             });
             csvLines.push("");
 
-            // BLOQUE 3: DETALLE DE VALIDACIÓN (CAMAS)
-            csvLines.push("TIPO_REGISTRO,ORDEN_COMPRA,EMPLEADO,SKU,TARIMA,CAMA,CAJAS,FECHA,ESTADO_REGISTRO");
-            ordenData.skus.forEach(s => {
-                s.tarimas.forEach((t, tIdx) => {
-                    t.camas.forEach((c, cIdx) => {
-                        csvLines.push(`DETALLE_VALIDACION,${ordenData.oc},${ordenData.empleado},"${s.codigo}",Tarima_${tIdx+1},Cama_${cIdx+1},${c.cantidad},${fechaActual},Registrado`);
+            // BLOQUE 3: DETALLE DE VALIDACIÓN
+            csvLines.push("ORDEN_COMPRA,EMPLEADO,SKU,TARIMA,CAMA,CAJAS,FECHA,ESTADO_REGISTRO");
+            turnoData.ordenes.forEach(o => {
+                o.skus.forEach(s => {
+                    s.tarimas.forEach((t, tIdx) => {
+                        t.camas.forEach((c, cIdx) => {
+                            csvLines.push(`${o.oc},${o.empleado},"${s.codigo}",Tarima_${tIdx+1},Cama_${cIdx+1},${c.cantidad},${fechaActual},Registrado`);
+                        });
                     });
                 });
             });
             csvLines.push("");
 
             // BLOQUE 4: DETALLE DE DISCREPANCIAS
-            csvLines.push("TIPO_REGISTRO,ORDEN_COMPRA,EMPLEADO,SKU,TARIMA,CAMA,TIPO_DISCREPANCIA,CANTIDAD,OBSERVACIONES,FECHA_HORA,ESTADO_RESOLUCION");
-            ordenData.skus.forEach(s => {
-                s.discrepancias.forEach(d => {
-                    let obsClean = (d.obs || '').replace(/,/g, ' ');
-                    csvLines.push(`DETALLE_DISCREPANCIA,${ordenData.oc},${ordenData.empleado},"${s.codigo}",Tarima_${d.tarima},Cama_${d.cama},${d.tipo},${d.cantidad},"${obsClean}","${d.fechaHora}",Registrado`);
+            csvLines.push("ORDEN_COMPRA,EMPLEADO,SKU,TARIMA,CAMA,TIPO_DISCREPANCIA,CANTIDAD,OBSERVACIONES,FECHA_HORA,ESTADO_RESOLUCION");
+            turnoData.ordenes.forEach(o => {
+                o.skus.forEach(s => {
+                    s.discrepancias.forEach(d => {
+                        let obsClean = (d.obs || '').replace(/,/g, ' ');
+                        csvLines.push(`${o.oc},${o.empleado},"${s.codigo}",Tarima_${d.tarima},Cama_${d.cama},${d.tipo},${d.cantidad},"${obsClean}","${d.fechaHora}",Registrado`);
+                    });
                 });
             });
 
@@ -851,94 +963,104 @@
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Auditoria_Recibo_OC-${ordenData.oc || 'General'}_${new Date().toISOString().slice(0,10)}.csv`);
+            link.setAttribute("download", `Reporte_Turno_${turnoData.idTurno}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
 
-        // DESCARGA EN PDF PROFESIONAL (Requisito 7)
-        function exportarPDF() {
+        // REPORTE PDF EJECUTIVO PROFESIONAL (Requisito 6)
+        function exportarPDFTurno() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            doc.setFontSize(18);
+            doc.setFontSize(16);
             doc.setTextColor(79, 70, 229);
-            doc.text("Auditoría de Recibo", 14, 18);
+            doc.text("REPORTE DE AUDITORÍA DE RECIBO - TURNO", 14, 18);
 
-            doc.setFontSize(10);
+            doc.setFontSize(9);
             doc.setTextColor(100, 100, 100);
-            doc.text(`Orden de Compra: ${ordenData.oc || 'N/A'}`, 14, 25);
-            doc.text(`Número de Empleado: ${ordenData.empleado || 'N/A'}`, 14, 31);
-            doc.text(`Fecha de Auditoría: ${new Date().toLocaleDateString()}`, 14, 37);
-            doc.text(`Hora de Inicio: ${ordenData.horaInicio || 'N/A'} | Hora de Fin: ${ordenData.horaFin || 'En Proceso'}`, 14, 43);
+            doc.text(`ID Turno: ${turnoData.idTurno}`, 14, 25);
+            doc.text(`Fecha de Turno: ${turnoData.fechaInicio}`, 14, 30);
+            doc.text(`Total Órdenes Revisadas: ${turnoData.ordenes.length}`, 14, 35);
 
-            let totalEspG = 0, totalAudG = 0, totalTarimasG = 0, totalCamasG = 0;
-            let totalFaltG = 0, totalSobG = 0, totalMerG = 0;
+            let tableRows = [];
+            let totalSol = 0, totalCont = 0;
 
-            const tableRows = [];
-            ordenData.skus.forEach(s => {
-                totalEspG += s.esperadas;
-                totalAudG += s.auditadas;
-                totalTarimasG += s.tarimas.length;
-                let tC = 0;
-                s.tarimas.forEach(t => tC += t.camas.length);
-                totalCamasG += tC;
+            turnoData.ordenes.forEach(o => {
+                let esp = o.totalEsperado;
+                let cont = 0;
+                o.skus.forEach(s => cont += s.auditadas);
+                totalSol += esp;
+                totalCont += cont;
 
-                let diff = s.auditadas - s.esperadas;
-                let f = diff < 0 ? Math.abs(diff) : 0;
-                let sob = diff > 0 ? diff : 0;
-                let m = 0;
-                s.discrepancias.forEach(d => { if(d.tipo==='Merma') m += d.cantidad; });
+                let falt = 0, sob = 0, mer = 0;
+                o.skus.forEach(s => {
+                    let diff = s.auditadas - s.esperadas;
+                    if(diff < 0) falt += Math.abs(diff);
+                    if(diff > 0) sob += diff;
+                    s.discrepancias.forEach(d => { if(d.tipo==='Merma') mer += d.cantidad; });
+                });
 
-                totalFaltG += f;
-                totalSobG += sob;
-                totalMerG += m;
-
-                tableRows.push([s.codigo, s.esperadas, s.auditadas, s.tarimas.length, tC, f, sob, m]);
+                tableRows.push([o.oc, o.empleado, esp, cont, o.skus.length, falt, sob, mer, o.estado]);
             });
 
             doc.autoTable({
-                head: [['SKU', 'Esperadas', 'Contabilizadas', 'Tarimas', 'Camas', 'Faltantes', 'Sobrantes', 'Mermas']],
+                head: [['OC', 'Empleado', 'Solicitadas', 'Contadas', 'SKUs', 'Falt', 'Sob', 'Merma', 'Estado']],
                 body: tableRows,
-                startY: 50,
+                startY: 42,
                 theme: 'grid',
                 headStyles: { fillColor: [79, 70, 229] }
             });
 
             let finalY = doc.lastAutoTable.finalY + 10;
-            doc.setFontSize(12);
+            doc.setFontSize(11);
             doc.setTextColor(50, 50, 50);
-            doc.text("Resumen General de la Orden", 14, finalY);
+            doc.text("Indicadores Generales del Turno", 14, finalY);
 
-            doc.setFontSize(10);
-            doc.text(`Total Cajas Requeridas: ${totalEspG}`, 14, finalY + 7);
-            doc.text(`Total Cajas Contabilizadas: ${totalAudG}`, 14, finalY + 13);
-            doc.text(`Total Tarimas: ${totalTarimasG} | Total Camas: ${totalCamasG}`, 14, finalY + 19);
-            doc.text(`Total Faltantes: ${totalFaltG} | Total Sobrantes: ${totalSobG} | Total Mermas: ${totalMerG}`, 14, finalY + 25);
-            doc.text(`Estado Final: ${ordenData.estado}`, 14, finalY + 31);
+            doc.setFontSize(9);
+            doc.text(`Total Cajas Solicitadas: ${totalSol} | Total Cajas Contabilizadas: ${totalCont}`, 14, finalY + 6);
+            doc.text(`Fecha de Generación: ${new Date().toLocaleString()}`, 14, finalY + 12);
 
-            doc.save(`Auditoria_Recibo_OC-${ordenData.oc || 'General'}.pdf`);
-        }
-
-        function compartirArchivos() {
-            if (navigator.share) {
-                navigator.share({
-                    title: `Auditoría de Recibo OC: ${ordenData.oc}`,
-                    text: `Resumen de auditoría de la orden ${ordenData.oc} con ${ordenData.skus.length} SKUs evaluados.`,
-                    url: window.location.href
-                }).catch(() => {});
-            } else {
-                alert('La función de compartir no está soportada en este navegador. Utiliza las opciones de descarga directa.');
+            // Numeración de páginas
+            const pageCount = doc.internal.getNumberOfPages();
+            for(let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 10);
             }
+
+            doc.save(`Reporte_Auditoria_${turnoData.idTurno}.pdf`);
         }
 
-        function finalizarOrden() {
-            ordenData.estado = 'Finalizado';
-            ordenData.horaFin = new Date().toLocaleTimeString();
-            guardarEstadoLocal();
-            actualizarBadgeEstado();
-            alert('La auditoría de la orden ha sido completada y cerrada exitosamente.');
+        // CERRAR TURNO Y REINICIAR (Requisito 7)
+        function abrirModalCerrarTurno() {
+            const pendientes = turnoData.ordenes.filter(o => o.estado === 'En Proceso');
+            if(pendientes.length > 0) {
+                if(!confirm(`Atención: Tienes ${pendientes.length} órdenes en estado "En Proceso". ¿Deseas cerrar el turno de todas formas?`)) {
+                    return;
+                }
+            }
+            document.getElementById('modal-cerrar-turno').classList.remove('hidden');
+        }
+
+        function cerrarModalCerrarTurno() {
+            document.getElementById('modal-cerrar-turno').classList.add('hidden');
+        }
+
+        function confirmarCierreTurnoSinDescarga() {
+            historialTurnos.push(turnoData);
+            turnoData = {
+                idTurno: 'TURNO-' + new Date().toISOString().slice(0,10) + '-' + Math.floor(Math.random()*1000),
+                fechaInicio: new Date().toLocaleString(),
+                ordenes: []
+            };
+            ordenActivaId = null;
+            guardarTurnoLocal();
+            cerrarModalCerrarTurno();
+            actualizarTablaOrdenes();
+            alert('Turno cerrado y reiniciado exitosamente. Las órdenes anteriores se guardaron en el historial.');
+            cambiarPestana(1);
         }
     </script>
 </body>
