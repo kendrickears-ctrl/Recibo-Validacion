@@ -571,12 +571,19 @@
             cajasInput.value = '';
             guardarTurnoLocal();
             actualizarListaSKUsOrdenActiva();
+            
+            // Seleccionar automáticamente el SKU recién agregado
+            skuActivoCodigo = codigo;
+            poblarSelectorSKUConteo();
         }
 
         function eliminarSKUOrdenActiva(codigo) {
             const orden = obtenerOrdenActiva();
             if(!orden) return;
             orden.skus = orden.skus.filter(s => s.codigo !== codigo);
+            if(skuActivoCodigo === codigo) {
+                skuActivoCodigo = orden.skus.length > 0 ? orden.skus[0].codigo : null;
+            }
             guardarTurnoLocal();
             actualizarListaSKUsOrdenActiva();
         }
@@ -617,6 +624,12 @@
             const select = document.getElementById('sku-selector-conteo');
             if(!select || !orden) return;
             select.innerHTML = '';
+            
+            if(orden.skus.length === 0) {
+                document.getElementById('panel-conteo-sku').classList.add('hidden');
+                return;
+            }
+
             orden.skus.forEach(s => {
                 const opt = document.createElement('option');
                 opt.value = s.codigo;
@@ -624,9 +637,12 @@
                 if(s.codigo === skuActivoCodigo) opt.selected = true;
                 select.appendChild(opt);
             });
-            if(orden.skus.length > 0 && !skuActivoCodigo) {
+
+            if(!skuActivoCodigo || !orden.skus.find(s => s.codigo === skuActivoCodigo)) {
                 skuActivoCodigo = orden.skus[0].codigo;
+                select.value = skuActivoCodigo;
             }
+
             seleccionarSKUConteo();
         }
 
@@ -641,15 +657,20 @@
             const orden = obtenerOrdenActiva();
             const select = document.getElementById('sku-selector-conteo');
             if(!select || !orden) return;
-            skuActivoCodigo = select.value;
+            
+            if(select.value) {
+                skuActivoCodigo = select.value;
+            }
+            
             const sku = orden.skus.find(s => s.codigo === skuActivoCodigo);
-
-            if(!sku) return;
+            if(!sku) {
+                document.getElementById('panel-conteo-sku').classList.add('hidden');
+                return;
+            }
 
             document.getElementById('panel-conteo-sku').classList.remove('hidden');
-            document.getElementById('sku-activo-titulo').innerText = sku.codigo;
             
-            // Corrección asignación esperadas directa
+            // Asignación estricta y limpia de la cantidad esperada correspondiente al SKU seleccionado
             document.getElementById('sku-activo-esperadas').innerText = sku.esperadas;
 
             renderizarTarimasSKU(sku);
@@ -675,6 +696,7 @@
 
             if(sku.tarimas.length === 0) {
                 container.innerHTML = '<div class="text-xs text-slate-400 p-3 bg-slate-50 rounded-lg text-center">No hay tarimas. Presiona "Agregar Tarima".</div>';
+                guardarTurnoLocal();
                 return;
             }
 
@@ -715,35 +737,45 @@
         }
 
         function agregarTarimaOrdenActiva() {
-            const sku = obtenerOrdenActiva().skus.find(s => s.codigo === skuActivoCodigo);
+            const orden = obtenerOrdenActiva();
+            if(!orden) return;
+            const sku = orden.skus.find(s => s.codigo === skuActivoCodigo);
             if(!sku) return;
             sku.tarimas.push({ id: sku.tarimas.length + 1, camas: [{ id: 1, cantidad: 0 }] });
             renderizarTarimasSKU(sku);
         }
 
         function eliminarTarima(skuCodigo, tIdx) {
-            const sku = obtenerOrdenActiva().skus.find(s => s.codigo === skuCodigo);
+            const orden = obtenerOrdenActiva();
+            if(!orden) return;
+            const sku = orden.skus.find(s => s.codigo === skuCodigo);
             if(!sku) return;
             sku.tarimas.splice(tIdx, 1);
             renderizarTarimasSKU(sku);
         }
 
         function agregarCama(skuCodigo, tIdx) {
-            const sku = obtenerOrdenActiva().skus.find(s => s.codigo === skuCodigo);
+            const orden = obtenerOrdenActiva();
+            if(!orden) return;
+            const sku = orden.skus.find(s => s.codigo === skuCodigo);
             if(!sku) return;
             sku.tarimas[tIdx].camas.push({ id: sku.tarimas[tIdx].camas.length + 1, cantidad: 0 });
             renderizarTarimasSKU(sku);
         }
 
         function eliminarCama(skuCodigo, tIdx, cIdx) {
-            const sku = obtenerOrdenActiva().skus.find(s => s.codigo === skuCodigo);
+            const orden = obtenerOrdenActiva();
+            if(!orden) return;
+            const sku = orden.skus.find(s => s.codigo === skuCodigo);
             if(!sku) return;
             sku.tarimas[tIdx].camas.splice(cIdx, 1);
             renderizarTarimasSKU(sku);
         }
 
         function actualizarCantidadCamaDirecto(skuCodigo, tIdx, cIdx, valor) {
-            const sku = obtenerOrdenActiva().skus.find(s => s.codigo === skuCodigo);
+            const orden = obtenerOrdenActiva();
+            if(!orden) return;
+            const sku = orden.skus.find(s => s.codigo === skuCodigo);
             if(!sku) return;
             sku.tarimas[tIdx].camas[cIdx].cantidad = parseInt(valor) || 0;
             
@@ -900,9 +932,6 @@
         // EXPORTAR CSV TABULAR UNIFICADO (POR COLUMNAS, SIN FILAS DESORDENADAS)
         function exportarCSVTurno() {
             let csvLines = [];
-            let fechaActual = new Date().toLocaleDateString();
-
-            // ENCABEZADOS UNIFICADOS DE IZQUIERDA A DERECHA
             csvLines.push("ORDEN_COMPRA,EMPLEADO,HORA_INICIO,HORA_FIN,ESTADO_ORDEN,SKU,CAJAS_ESPERADAS_SKU,CAJAS_CONTABILIZADAS_SKU,DIFERENCIA_SKU,TARIMA,CAMA,CAJAS_CAMA,DISCREPANCIA_TIPO,DISCREPANCIA_CANTIDAD,DISCREPANCIA_OBS");
 
             turnoData.ordenes.forEach(o => {
@@ -993,7 +1022,6 @@
             doc.text(`Total Cajas Solicitadas: ${totalSol} | Total Cajas Contabilizadas: ${totalCont}`, 14, finalY + 6);
             doc.text(`Fecha de Generación: ${new Date().toLocaleString()}`, 14, finalY + 12);
 
-            // Numeración de páginas
             const pageCount = doc.internal.getNumberOfPages();
             for(let i = 1; i <= pageCount; i++) {
                 doc.setPage(i);
