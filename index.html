@@ -32,16 +32,16 @@
 
         <!-- NAVEGACIÓN POR PASOS -->
         <div class="mb-6 bg-white rounded-xl shadow-sm p-3 flex justify-between text-xs sm:text-sm font-medium border border-slate-200 overflow-x-auto">
-            <button id="step-btn-1" onclick="cambiarPestana(1)" class="flex-1 py-2 px-3 rounded-lg text-center bg-indigo-50 text-indigo-700 font-bold border border-indigo-200">
+            <button type="button" id="step-btn-1" onclick="cambiarPestana(1)" class="flex-1 py-2 px-3 rounded-lg text-center bg-indigo-50 text-indigo-700 font-bold border border-indigo-200">
                 1. Registro de Orden
             </button>
-            <button id="step-btn-2" onclick="cambiarPestana(2)" class="flex-1 py-2 px-3 rounded-lg text-center text-slate-500 hover:bg-slate-50">
+            <button type="button" id="step-btn-2" onclick="cambiarPestana(2)" class="flex-1 py-2 px-3 rounded-lg text-center text-slate-500 hover:bg-slate-50">
                 2. Captura de Conteos
             </button>
-            <button id="step-btn-3" onclick="cambiarPestana(3)" class="flex-1 py-2 px-3 rounded-lg text-center text-slate-500 hover:bg-slate-50">
+            <button type="button" id="step-btn-3" onclick="cambiarPestana(3)" class="flex-1 py-2 px-3 rounded-lg text-center text-slate-500 hover:bg-slate-50">
                 3. Resumen y Cierre
             </button>
-            <button id="step-btn-4" onclick="cambiarPestana(4)" class="flex-1 py-2 px-3 rounded-lg text-center text-slate-500 hover:bg-slate-50">
+            <button type="button" id="step-btn-4" onclick="cambiarPestana(4)" class="flex-1 py-2 px-3 rounded-lg text-center text-slate-500 hover:bg-slate-50">
                 4. Detalle Completo
             </button>
         </div>
@@ -82,8 +82,6 @@
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Código SKU</label>
                         <div class="flex">
                             <input type="text" id="sku-codigo-input" placeholder="Ej: 10024143" class="w-full border border-slate-300 rounded-l-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                            
-                            <!-- Botón de Cámara Nativa -->
                             <label class="bg-indigo-600 text-white px-3 py-2 rounded-r-lg hover:bg-indigo-700 cursor-pointer flex items-center justify-center" title="Tomar Foto / Escanear">
                                 <i class="fa-solid fa-camera"></i>
                                 <input type="file" accept="image/*" capture="environment" onchange="procesarFotoCamara(this)" class="hidden">
@@ -179,13 +177,18 @@
                     <div id="tarimas-container" class="space-y-4"></div>
                 </div>
 
-                <div class="mt-6 pt-4 border-t flex justify-between items-center">
+                <div class="mt-6 pt-4 border-t flex justify-between items-center flex-wrap gap-2">
                     <button type="button" onclick="abrirModalDiscrepancia()" class="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded-lg text-xs flex items-center shadow">
                         <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Registrar Discrepancia / Merma
                     </button>
-                    <button type="button" onclick="marcarSKUFinalizado()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2 rounded-lg text-sm shadow">
-                        <i class="fa-solid fa-check-double mr-1.5"></i> Concluir Conteo de este SKU
-                    </button>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="cambiarPestana(3)" class="bg-slate-600 hover:bg-slate-700 text-white font-bold px-4 py-2 rounded-lg text-xs shadow">
+                            Ver Resumen <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                        <button type="button" onclick="marcarSKUFinalizado()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs shadow">
+                            <i class="fa-solid fa-check-double mr-1.5"></i> Concluir SKU
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -306,7 +309,7 @@
     </div>
 
     <script>
-        // ESTADO GLOBAL
+        // ESTADO GLOBAL Y PERSISTENCIA LOCAL
         let ordenData = {
             oc: '',
             empleado: '',
@@ -317,10 +320,480 @@
 
         let skuActivoCodigo = null;
 
+        // Cargar datos almacenados si existen al iniciar
+        document.addEventListener("DOMContentLoaded", function() {
+            const saved = localStorage.getItem('ordenData_conteo');
+            if (saved) {
+                try {
+                    ordenData = JSON.parse(saved);
+                    document.getElementById('oc-input').value = ordenData.oc || '';
+                    document.getElementById('empleado-input').value = ordenData.empleado || '';
+                    document.getElementById('total-esperado-oc-input').value = ordenData.totalEsperado || '';
+                    actualizarListaSKUs();
+                } catch(e) { console.error(e); }
+            }
+        });
+
+        function guardarEstadoLocal() {
+            localStorage.setItem('ordenData_conteo', JSON.stringify(ordenData));
+        }
+
         function cambiarPestana(paso) {
             [1, 2, 3, 4].forEach(p => {
-                document.getElementById(`paso-${p}`).classList.add('hidden');
-                document.getElementById(`step-btn-${p}`).className = "flex-1 py-2 px-3 rounded-lg text-center text-slate-500 hover:bg-slate-50";
+                const sec = document.getElementById(`paso-${p}`);
+                const btn = document.getElementById(`step-btn-${p}`);
+                if(sec) sec.classList.add('hidden');
+                if(btn) btn.className = "flex-1 py-2 px-3 rounded-lg text-center text-slate-500 hover:bg-slate-50";
             });
-            document.getElementById(`paso-${paso}`).classList.remove('hidden');
-            document.getElementById(`step-
+            const targetSec = document.getElementById(`paso-${paso}`);
+            const targetBtn = document.getElementById(`step-btn-${paso}`);
+            if(targetSec) targetSec.classList.remove('hidden');
+            if(targetBtn) targetBtn.className = "flex-1 py-2 px-3 rounded-lg text-center bg-indigo-50 text-indigo-700 font-bold border border-indigo-200";
+
+            if(paso === 2 && ordenData.skus.length > 0 && !skuActivoCodigo) {
+                skuActivoCodigo = ordenData.skus[0].codigo;
+                poblarSelectorSKU();
+            }
+            if(paso === 3) renderizarResumenFinal();
+            if(paso === 4) renderizarDetalleCompleto();
+            window.scrollTo(0,0);
+        }
+
+        function agregarSKU() {
+            const codigoInput = document.getElementById('sku-codigo-input');
+            const cajasInput = document.getElementById('sku-cajas-input');
+
+            const codigo = codigoInput.value.trim();
+            const cajas = parseInt(cajasInput.value);
+
+            if(!codigo || isNaN(cajas) || cajas <= 0) {
+                alert('Por favor ingresa un código SKU válido y la cantidad de cajas esperadas.');
+                return;
+            }
+
+            if(ordenData.skus.find(s => s.codigo === codigo)) {
+                alert('Este SKU ya está registrado en la orden.');
+                return;
+            }
+
+            ordenData.skus.push({
+                codigo: codigo,
+                esperadas: cajas,
+                auditadas: 0,
+                tarimas: [],
+                discrepancias: [],
+                finalizado: false
+            });
+
+            codigoInput.value = '';
+            cajasInput.value = '';
+
+            actualizarListaSKUs();
+            guardarEstadoLocal();
+        }
+
+        function eliminarSKU(codigo) {
+            if(confirm(`¿Estás seguro de eliminar el SKU ${codigo}?`)) {
+                ordenData.skus = ordenData.skus.filter(s => s.codigo !== codigo);
+                actualizarListaSKUs();
+                guardarEstadoLocal();
+            }
+        }
+
+        function actualizarListaSKUs() {
+            const tbody = document.getElementById('tabla-skus-body');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            let totalSKUsCajas = 0;
+
+            if(ordenData.skus.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-slate-400">No hay SKUs registrados aún.</td></tr>';
+            } else {
+                ordenData.skus.forEach(s => {
+                    totalSKUsCajas += s.esperadas;
+                    const tr = document.createElement('tr');
+                    tr.className = "border-t border-slate-100";
+                    tr.innerHTML = `
+                        <td class="p-2.5 font-bold text-slate-700">${s.codigo}</td>
+                        <td class="p-2.5">${s.esperadas} cajas</td>
+                        <td class="p-2.5 text-center">
+                            <button type="button" onclick="eliminarSKU('${s.codigo}')" class="text-rose-600 hover:text-rose-800 px-2 py-1">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            const sumElem = document.getElementById('sum-skus-esperadas');
+            const badgeElem = document.getElementById('badge-sku-count');
+            if(sumElem) sumElem.innerText = `${totalSKUsCajas} cajas`;
+            if(badgeElem) badgeElem.innerText = `${ordenData.skus.length} SKUs agregados`;
+        }
+
+        function poblarSelectorSKU() {
+            const select = document.getElementById('sku-selector');
+            if(!select) return;
+            select.innerHTML = '';
+            ordenData.skus.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.codigo;
+                opt.innerText = `SKU: ${s.codigo} (${s.esperadas} cajas esperadas)`;
+                if(s.codigo === skuActivoCodigo) opt.selected = true;
+                select.appendChild(opt);
+            });
+            seleccionarSKUActivo();
+        }
+
+        function iniciarCaptura() {
+            ordenData.oc = document.getElementById('oc-input').value.trim();
+            ordenData.empleado = document.getElementById('empleado-input').value.trim();
+            ordenData.totalEsperado = parseInt(document.getElementById('total-esperado-oc-input').value) || 0;
+
+            if(!ordenData.oc || !ordenData.empleado || ordenData.skus.length === 0) {
+                alert('Completa la información general (Orden, Empleado) y agrega al menos un SKU.');
+                return;
+            }
+
+            guardarEstadoLocal();
+            poblarSelectorSKU();
+            cambiarPestana(2);
+        }
+
+        function seleccionarSKUActivo() {
+            const select = document.getElementById('sku-selector');
+            if(!select) return;
+            skuActivoCodigo = select.value;
+            const sku = ordenData.skus.find(s => s.codigo === skuActivoCodigo);
+
+            if(!sku) return;
+
+            const panel = document.getElementById('panel-conteo-sku');
+            if(panel) panel.classList.remove('hidden');
+            
+            const titleElem = document.getElementById('sku-activo-titulo');
+            const espElem = document.getElementById('sku-activo-esperadas');
+            if(titleElem) titleElem.innerText = sku.codigo;
+            if(espElem) espElem.innerText = sku.esperadas;
+
+            renderizarTarimasSKU(sku);
+        }
+
+        function renderizarTarimasSKU(sku) {
+            let totalAuditado = 0;
+            sku.tarimas.forEach(t => {
+                t.camas.forEach(c => totalAuditado += (c.cantidad || 0));
+            });
+            sku.auditadas = totalAuditado;
+
+            const audElem = document.getElementById('sku-activo-auditadas');
+            const diffElem = document.getElementById('sku-activo-diferencia');
+            if(audElem) audElem.innerText = totalAuditado;
+            
+            const diff = totalAuditado - sku.esperadas;
+            if(diffElem) diffElem.innerText = (diff > 0 ? `+${diff}` : diff);
+
+            const container = document.getElementById('tarimas-container');
+            if(!container) return;
+            container.innerHTML = '';
+
+            if(sku.tarimas.length === 0) {
+                container.innerHTML = '<div class="text-xs text-slate-400 p-3 bg-slate-50 rounded-lg text-center">No hay tarimas registradas. Presiona "Agregar Tarima" para comenzar.</div>';
+                return;
+            }
+
+            sku.tarimas.forEach((tarima, tIdx) => {
+                let totalTarima = 0;
+                tarima.camas.forEach(c => totalTarima += (c.cantidad || 0));
+
+                const tDiv = document.createElement('div');
+                tDiv.className = "bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3";
+
+                let camasHTML = '';
+                tarima.camas.forEach((cama, cIdx) => {
+                    camasHTML += `
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-semibold text-slate-600 w-16">Cama ${cIdx + 1}:</span>
+                            <input type="number" value="${cama.cantidad}" oninput="actualizarCantidadCama('${sku.codigo}', ${tIdx}, ${cIdx}, this.value)" class="w-24 border border-slate-300 rounded px-2 py-1 text-xs text-center font-bold">
+                            <span class="text-xs text-slate-400">cajas</span>
+                            <button type="button" onclick="eliminarCama('${sku.codigo}', ${tIdx}, ${cIdx})" class="text-rose-500 hover:text-rose-700 text-xs px-2" title="Eliminar Cama">
+                                <i class="fa-solid fa-minus-circle"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+
+                tDiv.innerHTML = `
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <span class="font-bold text-slate-700 text-xs">Tarima ${tIdx + 1} (Total: ${totalTarima} cajas)</span>
+                        <div class="space-x-2">
+                            <button type="button" onclick="agregarCama('${sku.codigo}', ${tIdx})" class="text-xs bg-indigo-100 text-indigo-700 font-semibold px-2 py-1 rounded hover:bg-indigo-200">
+                                <i class="fa-solid fa-plus text-2xs mr-1"></i> Cama
+                            </button>
+                            <button type="button" onclick="eliminarTarima('${sku.codigo}', ${tIdx})" class="text-xs bg-rose-100 text-rose-700 font-semibold px-2 py-1 rounded hover:bg-rose-200" title="Eliminar Tarima">
+                                <i class="fa-solid fa-trash"></i> Tarima
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                        ${camasHTML || '<span class="text-xs text-slate-400">Sin camas agregadas.</span>'}
+                    </div>
+                `;
+                container.appendChild(tDiv);
+            });
+            guardarEstadoLocal();
+        }
+
+        function agregarTarima() {
+            const sku = ordenData.skus.find(s => s.codigo === skuActivoCodigo);
+            if(!sku) return;
+            sku.tarimas.push({ id: sku.tarimas.length + 1, camas: [{ id: 1, cantidad: 0 }] });
+            renderizarTarimasSKU(sku);
+        }
+
+        function eliminarTarima(skuCodigo, tIdx) {
+            const sku = ordenData.skus.find(s => s.codigo === skuCodigo);
+            if(!sku) return;
+            sku.tarimas.splice(tIdx, 1);
+            renderizarTarimasSKU(sku);
+        }
+
+        function agregarCama(skuCodigo, tIdx) {
+            const sku = ordenData.skus.find(s => s.codigo === skuCodigo);
+            if(!sku) return;
+            sku.tarimas[tIdx].camas.push({ id: sku.tarimas[tIdx].camas.length + 1, cantidad: 0 });
+            renderizarTarimasSKU(sku);
+        }
+
+        function eliminarCama(skuCodigo, tIdx, cIdx) {
+            const sku = ordenData.skus.find(s => s.codigo === skuCodigo);
+            if(!sku) return;
+            sku.tarimas[tIdx].camas.splice(cIdx, 1);
+            renderizarTarimasSKU(sku);
+        }
+
+        function actualizarCantidadCama(skuCodigo, tIdx, cIdx, valor) {
+            const sku = ordenData.skus.find(s => s.codigo === skuCodigo);
+            if(!sku) return;
+            sku.tarimas[tIdx].camas[cIdx].cantidad = parseInt(valor) || 0;
+            renderizarTarimasSKU(sku);
+        }
+
+        function marcarSKUFinalizado() {
+            const sku = ordenData.skus.find(s => s.codigo === skuActivoCodigo);
+            if(!sku) return;
+            sku.finalizado = true;
+            guardarEstadoLocal();
+            alert(`El conteo del SKU ${sku.codigo} ha sido concluido y guardado.`);
+        }
+
+        function abrirModalDiscrepancia() {
+            const modal = document.getElementById('modal-discrepancia');
+            if(modal) modal.classList.remove('hidden');
+        }
+
+        function cerrarModalDiscrepancia() {
+            const modal = document.getElementById('modal-discrepancia');
+            if(modal) modal.classList.add('hidden');
+        }
+
+        function guardarDiscrepancia() {
+            const sku = ordenData.skus.find(s => s.codigo === skuActivoCodigo);
+            if(!sku) return;
+
+            const tipo = document.getElementById('disc-tipo').value;
+            const cantidad = parseInt(document.getElementById('disc-cantidad').value) || 0;
+            const tarima = parseInt(document.getElementById('disc-tarima').value) || 1;
+            const cama = parseInt(document.getElementById('disc-cama').value) || 1;
+            const obs = document.getElementById('disc-obs').value.trim();
+
+            if(cantidad <= 0) {
+                alert('Ingresa una cantidad válida de cajas.');
+                return;
+            }
+
+            sku.discrepancias.push({
+                tipo,
+                cantidad,
+                tarima,
+                cama,
+                obs,
+                fechaHora: new Date().toLocaleString()
+            });
+
+            cerrarModalDiscrepancia();
+            guardarEstadoLocal();
+            alert('Discrepancia/Merma registrada correctamente.');
+        }
+
+        function renderizarResumenFinal() {
+            const tbody = document.getElementById('tabla-resumen-body');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            if(ordenData.skus.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-slate-400">No hay SKUs registrados.</td></tr>';
+                return;
+            }
+
+            ordenData.skus.forEach(s => {
+                let totalTarimas = s.tarimas.length;
+                let totalCamas = 0;
+                s.tarimas.forEach(t => totalCamas += t.camas.length);
+
+                let faltantes = 0, sobrantes = 0, mermas = 0;
+                const diff = s.auditadas - s.esperadas;
+                if(diff < 0) faltantes = Math.abs(diff);
+                if(diff > 0) sobrantes = diff;
+
+                s.discrepancias.forEach(d => {
+                    if(d.tipo === 'Merma') mermas += d.cantidad;
+                });
+
+                let estadoBadge = '<span class="bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded text-2xs">Sin diferencias</span>';
+                if(diff !== 0 || s.discrepancias.length > 0) {
+                    estadoBadge = '<span class="bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded text-2xs">Validado con discrepancia</span>';
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-800">${s.codigo}</td>
+                    <td class="p-3">${s.esperadas}</td>
+                    <td class="p-3 font-bold">${s.auditadas}</td>
+                    <td class="p-3">${totalTarimas}</td>
+                    <td class="p-3">${totalCamas}</td>
+                    <td class="p-3 text-rose-600 font-bold">${faltantes}</td>
+                    <td class="p-3 text-indigo-600 font-bold">${sobrantes}</td>
+                    <td class="p-3 text-amber-600 font-bold">${mermas}</td>
+                    <td class="p-3">${estadoBadge}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function exportarExcel() {
+            if(typeof XLSX === 'undefined') {
+                alert('La librería de Excel no está disponible.');
+                return;
+            }
+            const wb = XLSX.utils.book_new();
+
+            const resumenData = [
+                ["DATOS GENERALES DE LA ORDEN DE CONTEO"],
+                ["Orden de Compra", ordenData.oc],
+                ["Empleado", ordenData.empleado],
+                ["Fecha y Hora", new Date().toLocaleString()],
+                [],
+                ["RESUMEN POR SKU"],
+                ["SKU", "Esperadas", "Contabilizadas", "Faltante", "Sobrante", "Merma"]
+            ];
+
+            ordenData.skus.forEach(s => {
+                let diff = s.auditadas - s.esperadas;
+                let f = diff < 0 ? Math.abs(diff) : 0;
+                let sob = diff > 0 ? diff : 0;
+                let m = 0;
+                s.discrepancias.forEach(d => { if(d.tipo==='Merma') m += d.cantidad; });
+                resumenData.push([s.codigo, s.esperadas, s.auditadas, f, sob, m]);
+            });
+
+            const ws1 = XLSX.utils.aoa_to_sheet(resumenData);
+            XLSX.utils.book_append_sheet(wb, ws1, "Resumen General");
+
+            const detalleData = [["SKU", "Tarima", "Cama", "Cajas Contabilizadas"]];
+            ordenData.skus.forEach(s => {
+                s.tarimas.forEach((t, tIdx) => {
+                    t.camas.forEach((c, cIdx) => {
+                        detalleData.push([s.codigo, `Tarima ${tIdx+1}`, `Cama ${cIdx+1}`, c.cantidad]);
+                    });
+                });
+            });
+            const ws2 = XLSX.utils.aoa_to_sheet(detalleData);
+            XLSX.utils.book_append_sheet(wb, ws2, "Detalle Conteos");
+
+            XLSX.writeFile(wb, `Conteo_OC_${ordenData.oc || 'General'}.xlsx`);
+        }
+
+        function exportarCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,SKU,Tarima,Cama,Cajas\n";
+            ordenData.skus.forEach(s => {
+                s.tarimas.forEach((t, tIdx) => {
+                    t.camas.forEach((c, cIdx) => {
+                        csvContent += `${s.codigo},Tarima ${tIdx+1},Cama ${cIdx+1},${c.cantidad}\n`;
+                    });
+                });
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Detalle_Conteo_${ordenData.oc || 'General'}.csv`);
+            document.body.appendChild(link);
+            link.click();
+        }
+
+        function finalizarOrden() {
+            ordenData.estado = 'Finalizado';
+            guardarEstadoLocal();
+            alert('El conteo de la orden ha sido completado y cerrado exitosamente.');
+        }
+
+        function renderizarDetalleCompleto() {
+            const container = document.getElementById('detalle-acordeon-container');
+            if(!container) return;
+            container.innerHTML = '';
+
+            const selectFilter = document.getElementById('filtro-sku');
+            if(selectFilter && selectFilter.options.length <= 1) {
+                ordenData.skus.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.codigo;
+                    opt.innerText = s.codigo;
+                    selectFilter.appendChild(opt);
+                });
+            }
+
+            const filtroSKU = selectFilter ? selectFilter.value : '';
+            const filtroTipo = document.getElementById('filtro-discrepancia') ? document.getElementById('filtro-discrepancia').value : '';
+
+            if(ordenData.skus.length === 0) {
+                container.innerHTML = '<div class="text-xs text-slate-400 text-center p-4">No hay registros detallados.</div>';
+                return;
+            }
+
+            ordenData.skus.forEach(s => {
+                if(filtroSKU && s.codigo !== filtroSKU) return;
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = "border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm p-3 space-y-2";
+
+                let detalleTarimas = '';
+                s.tarimas.forEach((t, tIdx) => {
+                    let camasTxt = t.camas.map((c, cIdx) => `Cama ${cIdx+1}: ${c.cantidad} cajas`).join(' | ');
+                    detalleTarimas += `<div class="p-2 border-b text-xs text-slate-600"><strong>Tarima ${tIdx+1}:</strong> ${camasTxt || 'Sin camas'}</div>`;
+                });
+
+                let detalleDisc = '';
+                s.discrepancias.forEach(d => {
+                    if(filtroTipo && d.tipo !== filtroTipo) return;
+                    detalleDisc += `<div class="p-2 border-b text-xs text-amber-800 bg-amber-50"><strong>[${d.tipo}]</strong> ${d.cantidad} cajas (Tarima ${d.tarima}, Cama ${d.cama}) - ${d.obs}</div>`;
+                });
+
+                itemDiv.innerHTML = `
+                    <div class="font-bold text-xs text-slate-700">SKU: ${s.codigo} (${s.auditadas} de ${s.esperadas} cajas)</div>
+                    ${detalleTarimas || '<div class="text-xs text-slate-400">Sin datos de tarimas.</div>'}
+                    ${detalleDisc ? '<div class="font-semibold text-xs text-slate-500 mt-2">Discrepancias:</div>' + detalleDisc : ''}
+                `;
+                container.appendChild(itemDiv);
+            });
+        }
+
+        function procesarFotoCamara(input) {
+            if (input.files && input.files[0]) {
+                alert('Imagen capturada. El uso de la cámara nativa está activo.');
+            }
+        }
+    </script>
+</body>
+</html>
