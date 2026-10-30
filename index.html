@@ -26,11 +26,11 @@
         <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <i class="fa-solid fa-boxes-packing text-2xl text-indigo-200"></i>
-                <h1 class="text-xl font-bold tracking-wide">Conteo de Recibo - Turno Activo</h1>
+                <h1 class="text-xl font-bold tracking-wide">Auditoría de Recibo - Turno Activo</h1>
             </div>
             <div class="flex items-center gap-2">
                 <button type="button" onclick="abrirModalCerrarTurno()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs shadow transition">
-                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> Cerrar Turno
+                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> Cerrar Turno y Reiniciar
                 </button>
                 <div id="header-status" class="text-xs bg-indigo-800 px-2.5 py-1 rounded-full font-medium">Turno Abierto</div>
             </div>
@@ -59,7 +59,7 @@
                     <h2 class="text-lg font-bold text-slate-800 flex items-center">
                         <i class="fa-solid fa-clipboard-list text-indigo-600 mr-2"></i> Órdenes de Compra del Turno Actual
                     </h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Administra, agrega y da seguimiento a todas las órdenes de la jornada.</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Administra, agrega y da seguimiento a todas las órdenes de la jornada sin límite.</p>
                 </div>
                 <button type="button" onclick="abrirModalNuevaOrden()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-lg text-sm shadow transition flex items-center">
                     <i class="fa-solid fa-plus mr-2"></i> Agregar Nueva Orden
@@ -68,7 +68,7 @@
 
             <!-- Listado de Órdenes del Turno -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-                <h3 class="font-bold text-slate-700 text-sm mb-4 border-b pb-2">Órdenes Registradas (<span id="contador-ordenes">0</span>)</h3>
+                <h3 class="font-bold text-slate-700 text-sm mb-4 border-b pb-2">Órdenes Registradas en el Turno (<span id="contador-ordenes">0</span>)</h3>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs text-slate-600">
                         <thead class="bg-slate-100 text-slate-700 uppercase">
@@ -354,7 +354,7 @@
                 </h3>
                 <button type="button" onclick="cerrarModalCerrarTurno()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <p class="text-xs text-slate-600">Al cerrar el turno actual, se archivarán las órdenes completadas en el historial, se limpiará el espacio de trabajo para iniciar una nueva jornada y se guardarán los registros. ¿Deseas descargar el reporte general antes de continuar?</p>
+            <p class="text-xs text-slate-600">Al cerrar el turno actual, se archivarán las órdenes en el historial, se limpiará el espacio para iniciar una nueva jornada y se guardarán los registros. ¿Deseas descargar el reporte general antes de continuar?</p>
             <div class="flex flex-col gap-2 pt-2 border-t">
                 <button type="button" onclick="exportarPDFTurno()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2 rounded-lg text-xs flex items-center justify-center shadow">
                     <i class="fa-solid fa-file-pdf mr-1.5"></i> Descargar Reporte PDF del Turno y Cerrar
@@ -371,7 +371,7 @@
         let turnoData = {
             idTurno: 'TURNO-' + new Date().toISOString().slice(0,10),
             fechaInicio: new Date().toLocaleString(),
-            ordenes: [] // Array de órdenes { id, oc, empleado, totalEsperado, horaInicio, horaFin, skus: [], estado }
+            ordenes: [] 
         };
 
         let ordenActivaId = null;
