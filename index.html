@@ -17,7 +17,6 @@
     <style>
         .accordion-content { display: none; }
         .accordion-content.active { display: block; }
-        /* Scrollbar personalizado para Tema Oscuro */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -170,18 +169,22 @@
                         <select id="sku-selector-conteo" onchange="seleccionarSKUConteo()" class="bg-slate-900 border border-slate-600 rounded-lg p-2 text-sm font-bold text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none min-w-[220px]">
                         </select>
                     </div>
-                    <div class="flex gap-2 text-center text-xs">
-                        <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 min-w-[90px]">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                        <div class="bg-slate-900 p-2 rounded-lg border border-slate-700">
                             <span class="block font-semibold text-slate-400">Esperadas</span>
-                            <span class="text-base font-bold text-slate-100" id="sku-activo-esperadas">0</span>
+                            <span class="text-sm font-bold text-slate-100" id="sku-activo-esperadas">0</span>
                         </div>
-                        <div class="bg-indigo-950/60 p-2.5 rounded-lg border border-indigo-800 min-w-[90px]">
+                        <div class="bg-indigo-950/60 p-2 rounded-lg border border-indigo-800">
                             <span class="block font-semibold text-indigo-400">Contabilizadas</span>
-                            <span class="text-base font-bold text-indigo-200" id="sku-activo-auditadas">0</span>
+                            <span class="text-sm font-bold text-indigo-200" id="sku-activo-auditadas">0</span>
                         </div>
-                        <div class="bg-amber-950/60 p-2.5 rounded-lg border border-amber-800 min-w-[90px]">
+                        <div class="bg-amber-950/60 p-2 rounded-lg border border-amber-800">
                             <span class="block font-semibold text-amber-400">Diferencia</span>
-                            <span class="text-base font-bold text-amber-200" id="sku-activo-diferencia">0</span>
+                            <span class="text-sm font-bold text-amber-200" id="sku-activo-diferencia">0</span>
+                        </div>
+                        <div class="bg-teal-950/60 p-2 rounded-lg border border-teal-800">
+                            <span class="block font-semibold text-teal-400">Tarimas</span>
+                            <span class="text-sm font-bold text-teal-200" id="sku-activo-tarimas">0</span>
                         </div>
                     </div>
                 </div>
@@ -262,17 +265,17 @@
                     </table>
                 </div>
 
-                <!-- Botones de Exportación Consolidada -->
+                <!-- Botones de Exportación Independientes -->
                 <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-wrap gap-3 justify-between items-center">
                     <div class="flex flex-wrap gap-2">
-                        <button type="button" onclick="exportarExcelTurno()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3.5 py-2 rounded-lg text-xs shadow flex items-center">
+                        <button type="button" onclick="exportarPDFTurno()" class="bg-rose-600 hover:bg-rose-500 text-white font-semibold px-4 py-2.5 rounded-lg text-xs shadow flex items-center">
+                            <i class="fa-solid fa-file-pdf text-base mr-2"></i> Descargar Reporte PDF
+                        </button>
+                        <button type="button" onclick="exportarCSVTurno()" class="bg-teal-600 hover:bg-teal-500 text-white font-semibold px-4 py-2.5 rounded-lg text-xs shadow flex items-center">
+                            <i class="fa-solid fa-file-csv text-base mr-2"></i> Descargar Reporte CSV
+                        </button>
+                        <button type="button" onclick="exportarExcelTurno()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3.5 py-2.5 rounded-lg text-xs shadow flex items-center">
                             <i class="fa-solid fa-file-excel text-base mr-1.5"></i> Excel Turno (.xlsx)
-                        </button>
-                        <button type="button" onclick="exportarCSVTurno()" class="bg-teal-600 hover:bg-teal-500 text-white font-semibold px-3.5 py-2 rounded-lg text-xs shadow flex items-center">
-                            <i class="fa-solid fa-file-csv text-base mr-1.5"></i> CSV Turno (.csv)
-                        </button>
-                        <button type="button" onclick="exportarPDFTurno()" class="bg-rose-600 hover:bg-rose-500 text-white font-semibold px-3.5 py-2 rounded-lg text-xs shadow flex items-center">
-                            <i class="fa-solid fa-file-pdf text-base mr-1.5"></i> Reporte PDF Ejecutivo
                         </button>
                     </div>
 
@@ -317,7 +320,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE DISCREPANCIAS (LIMPIO AL ABRIR) -->
+    <!-- MODAL DE DISCREPANCIAS (SIMPLIFICADO SIN TARIMA/CAMA) -->
     <div id="modal-discrepancia" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2">
@@ -341,14 +344,7 @@
                     <input type="number" id="disc-cantidad" placeholder="Ej: 5" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Ubicación (Tarima y Cama)</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="number" id="disc-tarima" placeholder="N° Tarima" class="bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
-                        <input type="number" id="disc-cama" placeholder="N° Cama" class="bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Descripción u Observaciones</label>
+                    <label class="block font-semibold text-slate-300 mb-1">Comentario o Motivo de la Discrepancia</label>
                     <textarea id="disc-obs" rows="3" placeholder="Detalla el motivo..." class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
                 </div>
             </div>
@@ -369,11 +365,16 @@
                 </h3>
                 <button type="button" onclick="cerrarModalCerrarTurno()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <p class="text-xs text-slate-300">Al cerrar el turno actual, se archivarán las órdenes en el historial, se limpiará el espacio para iniciar una nueva jornada y se guardarán los registros. ¿Deseas descargar el reporte general antes de continuar?</p>
+            <p class="text-xs text-slate-300">Al cerrar el turno actual, se archivarán las órdenes en el historial, se limpiará el espacio para iniciar una nueva jornada y se guardarán los registros. ¿Deseas descargar los reportes antes de continuar?</p>
             <div class="flex flex-col gap-2 pt-2 border-t border-slate-700">
-                <button type="button" onclick="exportarPDFTurno()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-semibold py-2 rounded-lg text-xs flex items-center justify-center shadow">
-                    <i class="fa-solid fa-file-pdf mr-1.5"></i> Descargar Reporte PDF del Turno y Cerrar
-                </button>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="exportarPDFTurno()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-semibold py-2 rounded-lg text-xs flex items-center justify-center shadow">
+                        <i class="fa-solid fa-file-pdf mr-1.5"></i> PDF
+                    </button>
+                    <button type="button" onclick="exportarCSVTurno()" class="w-full bg-teal-600 hover:bg-teal-500 text-white font-semibold py-2 rounded-lg text-xs flex items-center justify-center shadow">
+                        <i class="fa-solid fa-file-csv mr-1.5"></i> CSV
+                    </button>
+                </div>
                 <button type="button" onclick="confirmarCierreTurnoSinDescarga()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 rounded-lg text-xs shadow">
                     Cerrar Turno sin Descargar
                 </button>
@@ -578,7 +579,9 @@
                 esperadas: cajas,
                 auditadas: 0,
                 tarimas: [],
-                discrepancias: [],
+                discrepanciaTipo: 'Sin discrepancia',
+                discrepanciaCantidad: 0,
+                discrepanciaObs: '',
                 finalizado: false
             });
 
@@ -697,7 +700,10 @@
 
             const audElem = document.getElementById('sku-activo-auditadas');
             const diffElem = document.getElementById('sku-activo-diferencia');
+            const tarimasElem = document.getElementById('sku-activo-tarimas');
+
             if(audElem) audElem.innerText = totalAuditado;
+            if(tarimasElem) tarimasElem.innerText = sku.tarimas.length;
             
             const diff = totalAuditado - sku.esperadas;
             if(diffElem) diffElem.innerText = (diff > 0 ? `+${diff}` : diff);
@@ -811,7 +817,7 @@
             
             let hayDiff = false;
             orden.skus.forEach(s => {
-                if(s.auditadas !== s.esperadas || s.discrepancias.length > 0) hayDiff = true;
+                if(s.auditadas !== s.esperadas || (s.discrepanciaTipo && s.discrepanciaTipo !== 'Sin discrepancia')) hayDiff = true;
             });
 
             orden.estado = hayDiff ? 'Finalizado con discrepancias' : 'Finalizado sin diferencias';
@@ -822,13 +828,16 @@
             cambiarPestana(3);
         }
 
-        // DISCREPANCIAS
+        // DISCREPANCIAS SIMPLIFICADAS
         function abrirModalDiscrepancia() {
-            document.getElementById('disc-tipo').value = 'Faltante';
-            document.getElementById('disc-cantidad').value = '';
-            document.getElementById('disc-tarima').value = '';
-            document.getElementById('disc-cama').value = '';
-            document.getElementById('disc-obs').value = '';
+            const orden = obtenerOrdenActiva();
+            if(!orden) return;
+            const sku = orden.skus.find(s => s.codigo === skuActivoCodigo);
+            if(!sku) { alert('Selecciona un SKU activo.'); return; }
+
+            document.getElementById('disc-tipo').value = sku.discrepanciaTipo || 'Faltante';
+            document.getElementById('disc-cantidad').value = sku.discrepanciaCantidad || '';
+            document.getElementById('disc-obs').value = sku.discrepanciaObs || '';
             document.getElementById('modal-discrepancia').classList.remove('hidden');
         }
 
@@ -844,19 +853,17 @@
 
             const tipo = document.getElementById('disc-tipo').value;
             const cantidad = parseInt(document.getElementById('disc-cantidad').value) || 0;
-            const tarima = parseInt(document.getElementById('disc-tarima').value) || 1;
-            const cama = parseInt(document.getElementById('disc-cama').value) || 1;
             const obs = document.getElementById('disc-obs').value.trim();
 
             if(cantidad <= 0) { alert('Ingresa cantidad válida.'); return; }
 
-            sku.discrepancias.push({
-                tipo, cantidad, tarima, cama, obs, empleado: orden.empleado, fechaHora: new Date().toLocaleString()
-            });
+            sku.discrepanciaTipo = tipo;
+            sku.discrepanciaCantidad = cantidad;
+            sku.discrepanciaObs = obs;
 
             cerrarModalDiscrepancia();
             guardarTurnoLocal();
-            alert('Discrepancia guardada correctamente.');
+            alert('Discrepancia y comentario guardados correctamente.');
         }
 
         // RESUMEN Y CONSOLIDADOS TURNO
@@ -888,7 +895,7 @@
                     let diff = s.auditadas - s.esperadas;
                     if(diff < 0) faltO += Math.abs(diff);
                     if(diff > 0) sobO += diff;
-                    s.discrepancias.forEach(d => { if(d.tipo === 'Merma') merO += d.cantidad; });
+                    if(s.discrepanciaTipo === 'Merma') merO += (s.discrepanciaCantidad || 0);
                 });
 
                 totalSolG += espO;
@@ -942,79 +949,79 @@
             XLSX.writeFile(wb, `Reporte_Turno_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        // EXPORTAR CSV REORGANIZADO VERTICALMENTE CON FORMATO TEXTO EXCEL POR SKU
+        // EXPORTAR CSV HOMOLOGADO EXACTAMENTE CON EL FORMATO Y DETALLE DEL PDF
         function exportarCSVTurno() {
             let csvRows = [];
             let fechaActual = new Date().toLocaleDateString('es-MX');
 
-            // Encabezados unificados exactamente como solicitados
             csvRows.push([
-                "Orden de compra",
+                "Número de orden de compra",
                 "SKU",
-                "Códigos solicitados",
-                "Cantidad solicitada",
-                "Códigos contabilizados",
-                "Cantidad auditada",
+                "Códigos o artículos solicitados",
+                "Cantidad de códigos solicitados",
+                "Cantidad de cajas solicitadas",
+                "Códigos o artículos contabilizados",
+                "Cantidad de códigos contabilizados",
+                "Cantidad de cajas auditadas",
+                "Diferencia entre lo solicitado y lo contabilizado",
                 "Tipo de discrepancia",
-                "Cajas con discrepancia",
-                "Fecha",
-                "Hora"
+                "Comentario de discrepancia",
+                "Cantidad de cajas involucradas en la discrepancia",
+                "Cantidad de tarimas contadas",
+                "Fecha de auditoría",
+                "Hora de auditoría",
+                "Empleado responsable"
             ]);
 
             turnoData.ordenes.forEach(o => {
                 const horaOrden = o.horaInicio || new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+                const empleadoOrden = o.empleado || 'N/A';
 
                 if (!o.skus || o.skus.length === 0) {
                     csvRows.push([
                         `"${o.oc}"`,
                         `="N/A"`,
                         0,
+                        0,
                         o.totalEsperado,
                         0,
                         0,
+                        0,
+                        0,
                         "Sin discrepancia",
+                        '""',
+                        0,
                         0,
                         fechaActual,
-                        horaOrden
+                        horaOrden,
+                        `"${empleadoOrden}"`
                     ]);
                 } else {
                     o.skus.forEach(s => {
                         let diff = s.auditadas - s.esperadas;
-                        let tipoDisc = "Sin discrepancia";
-                        let cajasDisc = 0;
-
-                        let totalMermas = 0;
-                        if (s.discrepancias && s.discrepancias.length > 0) {
-                            s.discrepancias.forEach(d => {
-                                if (d.tipo === 'Merma') totalMermas += d.cantidad;
-                            });
-                        }
-
-                        if (totalMermas > 0) {
-                            tipoDisc = "Merma";
-                            cajasDisc = totalMermas;
-                        } else if (diff < 0) {
-                            tipoDisc = "Faltante";
-                            cajasDisc = Math.abs(diff);
-                        } else if (diff > 0) {
-                            tipoDisc = "Sobrante";
-                            cajasDisc = diff;
-                        }
-
-                        // Formateo de SKU `="CÓDIGO"` para evitar notación científica en Excel
+                        let tipoDisc = s.discrepanciaTipo || "Sin discrepancia";
+                        let cantidadDisc = s.discrepanciaCantidad || 0;
+                        let obsDisc = (s.discrepanciaObs || "").replace(/"/g, '""');
+                        let totalTarimas = s.tarimas ? s.tarimas.length : 0;
                         let skuFormatted = `="${s.codigo}"`;
 
                         csvRows.push([
                             `"${o.oc}"`,
                             skuFormatted,
                             1,
-                            s.esperadas,
                             1,
+                            s.esperadas,
+                            s.auditadas > 0 ? 1 : 0,
+                            s.auditadas > 0 ? 1 : 0,
                             s.auditadas,
+                            diff,
                             tipoDisc,
-                            cajasDisc,
+                            `"${obsDisc}"`,
+                            cantidadDisc,
+                            totalTarimas,
                             fechaActual,
-                            horaOrden
+                            horaOrden,
+                            `"${empleadoOrden}"`
                         ]);
                     });
                 }
@@ -1025,13 +1032,13 @@
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Reporte_Auditoria_Recibo_${new Date().toISOString().slice(0,10)}.csv`);
+            link.setAttribute("download", `Reporte_Detallado_Auditoria_${new Date().toISOString().slice(0,10)}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
 
-        // REPORTE PDF EJECUTIVO MEJORADO Y DETALLADO POR ORDEN
+        // EXPORTAR PDF EJECUTIVO MEJORADO Y DETALLADO
         function exportarPDFTurno() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -1053,7 +1060,7 @@
             doc.setTextColor(203, 213, 225);
             doc.text(`Turno: ${idTurno} | Generado: ${fechaGen}`, 120, 18);
 
-            // CÁLCULOS PARA RESUMEN GENERAL
+            // CÁLCULOS RESUMEN GENERAL
             let totalOrdenes = turnoData.ordenes.length;
             let totalSkus = 0;
             let totalCodContabilizados = 0;
@@ -1062,7 +1069,6 @@
             let totalSobrantes = 0;
             let totalFaltantes = 0;
             let totalMermas = 0;
-
             let primerEmpleado = "N/A";
 
             turnoData.ordenes.forEach(o => {
@@ -1078,12 +1084,7 @@
                         let diff = s.auditadas - s.esperadas;
                         if (diff < 0) totalFaltantes += Math.abs(diff);
                         if (diff > 0) totalSobrantes += diff;
-
-                        if (s.discrepancias) {
-                            s.discrepancias.forEach(d => {
-                                if (d.tipo === 'Merma') totalMermas += d.cantidad;
-                            });
-                        }
+                        if (s.discrepanciaTipo === 'Merma') totalMermas += (s.discrepanciaCantidad || 0);
                     });
                 }
             });
@@ -1101,7 +1102,6 @@
             doc.setTextColor(71, 85, 105);
             doc.text(`Auditor Principal: ${primerEmpleado}`, 140, 36);
 
-            // TABLA RESUMEN GENERAL
             doc.autoTable({
                 startY: 40,
                 head: [['Órdenes', 'SKUs', 'Cod. Contados', 'Cajas Solicitadas', 'Cajas Auditadas', 'Discrepancias', 'Sobrantes', 'Faltantes', 'Mermas']],
@@ -1137,8 +1137,8 @@
                 doc.setTextColor(100, 116, 139);
                 doc.text("No existen órdenes registradas en este turno.", 14, currentY + 6);
             } else {
-                turnoData.ordenes.forEach((o, index) => {
-                    if (currentY > 240) {
+                turnoData.ordenes.forEach((o) => {
+                    if (currentY > 230) {
                         doc.addPage();
                         currentY = 20;
                     }
@@ -1154,40 +1154,24 @@
                     let orderSkusBody = [];
 
                     if (!o.skus || o.skus.length === 0) {
-                        orderSkusBody.push(['N/A', 0, o.totalEsperado, 0, 0, 0, 'Sin discrepancia', 0, `${fechaOrden} ${horaOrden}`]);
+                        orderSkusBody.push(['N/A', 0, o.totalEsperado, 0, 0, 0, 'Sin discrepancia', '-', 0, 0, `${fechaOrden} ${horaOrden}`]);
                     } else {
                         o.skus.forEach(s => {
                             let diff = s.auditadas - s.esperadas;
-                            let tipoDisc = "Sin discrepancia";
-                            let cajasDisc = 0;
-
-                            let totalMermasSKU = 0;
-                            if (s.discrepancias) {
-                                s.discrepancias.forEach(d => {
-                                    if (d.tipo === 'Merma') totalMermasSKU += d.cantidad;
-                                });
-                            }
-
-                            if (totalMermasSKU > 0) {
-                                tipoDisc = "Merma";
-                                cajasDisc = totalMermasSKU;
-                            } else if (diff < 0) {
-                                tipoDisc = "Faltante";
-                                cajasDisc = Math.abs(diff);
-                            } else if (diff > 0) {
-                                tipoDisc = "Sobrante";
-                                cajasDisc = diff;
-                            }
+                            let tipoDisc = s.discrepanciaTipo || "Sin discrepancia";
+                            let cantDisc = s.discrepanciaCantidad || 0;
+                            let obsDisc = s.discrepanciaObs || "N/A";
+                            let totalTarimas = s.tarimas ? s.tarimas.length : 0;
 
                             orderSkusBody.push([
                                 s.codigo,
-                                1,
                                 s.esperadas,
-                                1,
                                 s.auditadas,
                                 diff > 0 ? `+${diff}` : diff,
                                 tipoDisc,
-                                cajasDisc,
+                                obsDisc,
+                                cantDisc,
+                                totalTarimas,
                                 `${fechaOrden} ${horaOrden}`
                             ]);
                         });
@@ -1195,17 +1179,18 @@
 
                     doc.autoTable({
                         startY: currentY + 6,
-                        head: [['SKU', 'Cod. Sol.', 'Cajas Sol.', 'Cod. Audit.', 'Cajas Audit.', 'Diferencia', 'Discrepancia', 'Cajas Disc.', 'Fecha/Hora']],
+                        head: [['SKU', 'Cajas Sol.', 'Cajas Audit.', 'Dif.', 'Tipo Disc.', 'Comentario Discrepancia', 'Cajas Disc.', 'Tarimas', 'Fecha/Hora']],
                         body: orderSkusBody,
                         theme: 'striped',
-                        headStyles: { fillColor: [71, 85, 105], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
-                        bodyStyles: { fontSize: 7, halign: 'center' },
+                        headStyles: { fillColor: [71, 85, 105], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 6.5 },
+                        bodyStyles: { fontSize: 6.5, halign: 'center' },
                         columnStyles: {
                             0: { halign: 'left', fontStyle: 'bold' },
-                            6: { fontStyle: 'bold' }
+                            5: { halign: 'left' },
+                            4: { fontStyle: 'bold' }
                         },
                         didParseCell: function(data) {
-                            if (data.section === 'body' && data.column.index === 6) {
+                            if (data.section === 'body' && data.column.index === 4) {
                                 if (data.cell.raw === 'Faltante') {
                                     data.cell.styles.textColor = [225, 29, 72];
                                 } else if (data.cell.raw === 'Sobrante') {
@@ -1224,7 +1209,7 @@
                 });
             }
 
-            // PIE DE PÁGINA Y NUMERACIÓN
+            // NUMERACIÓN DE PÁGINAS
             const pageCount = doc.internal.getNumberOfPages();
             for (let i = 1; i <= pageCount; i++) {
                 doc.setPage(i);
