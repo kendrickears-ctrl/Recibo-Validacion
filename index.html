@@ -19,47 +19,47 @@
         .accordion-content.active { display: block; }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen">
 
-    <!-- Encabezado Principal -->
-    <header class="bg-indigo-700 text-white shadow-md sticky top-0 z-40">
+    <!-- Encabezado Principal (Diseño Oscuro Original) -->
+    <header class="bg-slate-800 text-white shadow-md sticky top-0 z-40 border-b border-slate-700">
         <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-3">
-                <i class="fa-solid fa-boxes-packing text-2xl text-indigo-200"></i>
+                <i class="fa-solid fa-boxes-packing text-2xl text-indigo-400"></i>
                 <h1 class="text-xl font-bold tracking-wide">Auditoría de Recibo - Turno Activo</h1>
             </div>
             <div class="flex items-center gap-2">
-                <button type="button" onclick="abrirModalCerrarTurno()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs shadow transition">
+                <button type="button" onclick="abrirModalCerrarTurno()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow transition">
                     <i class="fa-solid fa-clock-rotate-left mr-1"></i> Cerrar Turno y Reiniciar
                 </button>
-                <div id="header-status" class="text-xs bg-indigo-800 px-2.5 py-1 rounded-full font-medium">Turno Abierto</div>
+                <div id="header-status" class="text-xs bg-indigo-900 text-indigo-200 border border-indigo-700 px-2.5 py-1 rounded-full font-medium">Turno Abierto</div>
             </div>
         </div>
     </header>
 
     <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
 
-        <!-- NAVEGACIÓN POR PESTAÑAS -->
-        <div class="bg-white rounded-xl shadow-sm p-3 flex justify-between text-xs sm:text-sm font-medium border border-slate-200 overflow-x-auto gap-2">
-            <button type="button" id="step-btn-1" onclick="cambiarPestana(1)" class="flex-1 py-2 px-3 rounded-lg text-center bg-indigo-50 text-indigo-700 font-bold border border-indigo-200 transition">
+        <!-- NAVEGACIÓN POR PESTAÑAS (Estilo Oscuro) -->
+        <div class="bg-slate-800 rounded-xl shadow-sm p-3 flex justify-between text-xs sm:text-sm font-medium border border-slate-700 overflow-x-auto gap-2">
+            <button type="button" id="step-btn-1" onclick="cambiarPestana(1)" class="flex-1 py-2 px-3 rounded-lg text-center bg-indigo-900/60 text-indigo-300 font-bold border border-indigo-700 transition">
                 1. Órdenes del Turno
             </button>
-            <button type="button" id="step-btn-2" onclick="cambiarPestana(2)" class="flex-1 py-2 px-3 rounded-lg text-center text-slate-500 hover:bg-slate-50 transition">
+            <button type="button" id="step-btn-2" onclick="cambiarPestana(2)" class="flex-1 py-2 px-3 rounded-lg text-center text-slate-400 hover:bg-slate-700 transition">
                 2. Captura de SKU y Tarimas
             </button>
-            <button type="button" id="step-btn-3" onclick="cambiarPestana(3)" class="flex-1 py-2 px-3 rounded-lg text-center text-slate-500 hover:bg-slate-50 transition">
+            <button type="button" id="step-btn-3" onclick="cambiarPestana(3)" class="flex-1 py-2 px-3 rounded-lg text-center text-slate-400 hover:bg-slate-700 transition">
                 3. Resumen y Reportes Generales
             </button>
         </div>
 
         <!-- SECCIÓN 1: GESTIÓN DE ÓRDENES DEL TURNO -->
         <section id="paso-1" class="space-y-6">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-wrap justify-between items-center gap-4">
+            <div class="bg-slate-800 rounded-xl shadow-sm border border-slate-700 p-5 flex flex-wrap justify-between items-center gap-4">
                 <div>
-                    <h2 class="text-lg font-bold text-slate-800 flex items-center">
-                        <i class="fa-solid fa-clipboard-list text-indigo-600 mr-2"></i> Órdenes de Compra del Turno Actual
+                    <h2 class="text-lg font-bold text-slate-100 flex items-center">
+                        <i class="fa-solid fa-clipboard-list text-indigo-400 mr-2"></i> Órdenes de Compra del Turno Actual
                     </h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Administra, agrega y da seguimiento a todas las órdenes de la jornada sin límite.</p>
+                    <p class="text-xs text-slate-400 mt-0.5">Administra, agrega y da seguimiento a todas las órdenes de la jornada sin límite.</p>
                 </div>
                 <button type="button" onclick="abrirModalNuevaOrden()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-lg text-sm shadow transition flex items-center">
                     <i class="fa-solid fa-plus mr-2"></i> Agregar Nueva Orden
@@ -67,11 +67,11 @@
             </div>
 
             <!-- Listado de Órdenes del Turno -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-                <h3 class="font-bold text-slate-700 text-sm mb-4 border-b pb-2">Órdenes Registradas en el Turno (<span id="contador-ordenes">0</span>)</h3>
+            <div class="bg-slate-800 rounded-xl shadow-sm border border-slate-700 p-5">
+                <h3 class="font-bold text-slate-200 text-sm mb-4 border-b border-slate-700 pb-2">Órdenes Registradas en el Turno (<span id="contador-ordenes">0</span>)</h3>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-slate-600">
-                        <thead class="bg-slate-100 text-slate-700 uppercase">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900 text-slate-400 uppercase border-b border-slate-700">
                             <tr>
                                 <th class="p-3">OC</th>
                                 <th class="p-3">Empleado</th>
@@ -83,8 +83,8 @@
                                 <th class="p-3 text-center">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="tabla-ordenes-body" class="divide-y divide-slate-200">
-                            <tr><td colspan="8" class="p-4 text-center text-slate-400">No hay órdenes registradas en este turno.</td></tr>
+                        <tbody id="tabla-ordenes-body" class="divide-y divide-slate-700">
+                            <tr><td colspan="8" class="p-4 text-center text-slate-500">No hay órdenes registradas en este turno.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -94,41 +94,41 @@
         <!-- SECCIÓN 2: CAPTURA DE SKU Y TARIMAS PARA LA ORDEN ACTIVA -->
         <section id="paso-2" class="hidden space-y-6">
             <!-- Selector de Orden Activa -->
-            <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
                 <div class="flex items-center space-x-3">
-                    <i class="fa-solid fa-file-circle-check text-indigo-600 text-xl"></i>
+                    <i class="fa-solid fa-file-circle-check text-indigo-400 text-xl"></i>
                     <div>
-                        <span class="text-xs font-semibold text-indigo-600 uppercase">Orden Seleccionada para Auditoría</span>
-                        <h3 class="text-base font-bold text-slate-800" id="info-orden-activa">Ninguna orden seleccionada</h3>
+                        <span class="text-xs font-semibold text-indigo-400 uppercase">Orden Seleccionada para Auditoría</span>
+                        <h3 class="text-base font-bold text-slate-100" id="info-orden-activa">Ninguna orden seleccionada</h3>
                     </div>
                 </div>
                 <div class="flex gap-2">
                     <button type="button" onclick="exportarPDFOrdenActiva()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm flex items-center">
                         <i class="fa-solid fa-file-pdf mr-1"></i> PDF Orden
                     </button>
-                    <button type="button" onclick="cambiarPestana(1)" class="bg-white border border-indigo-300 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-indigo-100">
+                    <button type="button" onclick="cambiarPestana(1)" class="bg-slate-700 border border-slate-600 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-slate-600">
                         Ver Órdenes
                     </button>
                 </div>
             </div>
 
             <!-- Registro de SKUs para la Orden Activa -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-                <div class="flex justify-between items-center border-b pb-2 mb-4">
-                    <h2 class="text-lg font-bold text-slate-800 flex items-center">
-                        <i class="fa-solid fa-barcode text-indigo-600 mr-2"></i> SKUs de la Orden Activa
+            <div class="bg-slate-800 rounded-xl shadow-sm border border-slate-700 p-5">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-4">
+                    <h2 class="text-lg font-bold text-slate-100 flex items-center">
+                        <i class="fa-solid fa-barcode text-indigo-400 mr-2"></i> SKUs de la Orden Activa
                     </h2>
-                    <span id="badge-sku-count" class="text-xs bg-indigo-100 text-indigo-800 font-semibold px-2.5 py-1 rounded-full">0 SKUs</span>
+                    <span id="badge-sku-count" class="text-xs bg-indigo-900 text-indigo-200 border border-indigo-700 font-semibold px-2.5 py-1 rounded-full">0 SKUs</span>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 bg-slate-900 p-3 rounded-lg border border-slate-700">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Código SKU</label>
-                        <input type="text" id="sku-codigo-input" placeholder="Ej: 10024143" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Código SKU</label>
+                        <input type="text" id="sku-codigo-input" placeholder="Ej: 10024143" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Cajas Esperadas (SKU)</label>
-                        <input type="number" id="sku-cajas-input" placeholder="Ej: 200" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Cajas Esperadas (SKU)</label>
+                        <input type="number" id="sku-cajas-input" placeholder="Ej: 200" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
                     </div>
                     <div class="flex items-end">
                         <button type="button" onclick="agregarSKUOrdenActiva()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg text-sm transition flex items-center justify-center">
@@ -138,49 +138,49 @@
                 </div>
 
                 <div class="overflow-x-auto mb-4">
-                    <table class="w-full text-left text-xs text-slate-600">
-                        <thead class="bg-slate-100 text-slate-700 uppercase">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900 text-slate-400 uppercase border-b border-slate-700">
                             <tr>
                                 <th class="p-2.5">SKU</th>
                                 <th class="p-2.5">Cajas Esperadas</th>
                                 <th class="p-2.5 text-center">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="tabla-skus-orden-body">
-                            <tr><td colspan="3" class="p-4 text-center text-slate-400">Selecciona una orden y agrega SKUs.</td></tr>
+                        <tbody id="tabla-skus-orden-body" class="divide-y divide-slate-700">
+                            <tr><td colspan="3" class="p-4 text-center text-slate-500">Selecciona una orden y agrega SKUs.</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
             <!-- Panel de Conteo Físico por Tarimas y Camas (SKU Seleccionado) -->
-            <div id="panel-conteo-sku" class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 hidden space-y-4">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-4 gap-3">
+            <div id="panel-conteo-sku" class="bg-slate-800 rounded-xl shadow-sm border border-slate-700 p-5 hidden space-y-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-700 pb-4 gap-3">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Seleccionar SKU a Contar:</label>
-                        <select id="sku-selector-conteo" onchange="seleccionarSKUConteo()" class="border border-slate-300 rounded-lg p-2 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 min-w-[220px]">
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Seleccionar SKU a Contar:</label>
+                        <select id="sku-selector-conteo" onchange="seleccionarSKUConteo()" class="bg-slate-900 border border-slate-600 rounded-lg p-2 text-sm font-bold text-slate-100 focus:ring-2 focus:ring-indigo-500 min-w-[220px]">
                         </select>
                     </div>
                     <div class="flex gap-2 text-center text-xs">
-                        <div class="bg-slate-100 p-2.5 rounded-lg border border-slate-200">
-                            <span class="block font-semibold text-slate-500">Esperadas</span>
-                            <span class="text-base font-bold text-slate-800" id="sku-activo-esperadas">0</span>
+                        <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700">
+                            <span class="block font-semibold text-slate-400">Esperadas</span>
+                            <span class="text-base font-bold text-slate-100" id="sku-activo-esperadas">0</span>
                         </div>
-                        <div class="bg-indigo-50 p-2.5 rounded-lg border border-indigo-200">
-                            <span class="block font-semibold text-indigo-600">Contabilizadas</span>
-                            <span class="text-base font-bold text-indigo-800" id="sku-activo-auditadas">0</span>
+                        <div class="bg-indigo-950 p-2.5 rounded-lg border border-indigo-800">
+                            <span class="block font-semibold text-indigo-300">Contabilizadas</span>
+                            <span class="text-base font-bold text-indigo-200" id="sku-activo-auditadas">0</span>
                         </div>
-                        <div class="bg-amber-50 p-2.5 rounded-lg border border-amber-200">
-                            <span class="block font-semibold text-amber-600">Diferencia</span>
-                            <span class="text-base font-bold text-amber-800" id="sku-activo-diferencia">0</span>
+                        <div class="bg-amber-950 p-2.5 rounded-lg border border-amber-800">
+                            <span class="block font-semibold text-amber-300">Diferencia</span>
+                            <span class="text-base font-bold text-amber-200" id="sku-activo-diferencia">0</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="space-y-4">
                     <div class="flex justify-between items-center">
-                        <h3 class="font-bold text-slate-700 text-sm"><i class="fa-solid fa-layer-group text-indigo-500 mr-1.5"></i> Tarimas y Camas Registradas</h3>
-                        <button type="button" onclick="agregarTarimaOrdenActiva()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-3 py-1.5 rounded-lg text-xs border border-indigo-200 transition">
+                        <h3 class="font-bold text-slate-200 text-sm"><i class="fa-solid fa-layer-group text-indigo-400 mr-1.5"></i> Tarimas y Camas Registradas</h3>
+                        <button type="button" onclick="agregarTarimaOrdenActiva()" class="bg-slate-700 hover:bg-slate-600 text-indigo-300 font-semibold px-3 py-1.5 rounded-lg text-xs border border-slate-600 transition">
                             <i class="fa-solid fa-plus mr-1"></i> Agregar Tarima
                         </button>
                     </div>
@@ -188,12 +188,12 @@
                     <div id="tarimas-container" class="space-y-4"></div>
                 </div>
 
-                <div class="mt-6 pt-4 border-t flex justify-between items-center flex-wrap gap-2">
-                    <button type="button" onclick="abrirModalDiscrepancia()" class="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded-lg text-xs flex items-center shadow">
+                <div class="mt-6 pt-4 border-t border-slate-700 flex justify-between items-center flex-wrap gap-2">
+                    <button type="button" onclick="abrirModalDiscrepancia()" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-4 py-2 rounded-lg text-xs flex items-center shadow">
                         <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Registrar Discrepancia / Merma
                     </button>
                     <div class="flex gap-2">
-                        <button type="button" onclick="cambiarPestana(3)" class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-lg text-xs shadow">
+                        <button type="button" onclick="cambiarPestana(3)" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold px-4 py-2 rounded-lg text-xs shadow">
                             Ver Resumen General <i class="fa-solid fa-arrow-right ml-1"></i>
                         </button>
                         <button type="button" onclick="marcarOrdenConcluida()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs shadow">
@@ -206,35 +206,35 @@
 
         <!-- SECCIÓN 3: RESUMEN Y REPORTES CONSOLIDADOS DEL TURNO -->
         <section id="paso-3" class="hidden space-y-6">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-                <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4 flex items-center">
-                    <i class="fa-solid fa-clipboard-check text-indigo-600 mr-2"></i> Resumen Consolidado del Turno
+            <div class="bg-slate-800 rounded-xl shadow-sm border border-slate-700 p-5">
+                <h2 class="text-lg font-bold text-slate-100 border-b border-slate-700 pb-2 mb-4 flex items-center">
+                    <i class="fa-solid fa-clipboard-check text-indigo-400 mr-2"></i> Resumen Consolidado del Turno
                 </h2>
 
                 <!-- Indicadores Generales Turno -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 text-center text-xs">
-                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                        <span class="block font-semibold text-slate-500">Órdenes Revisadas</span>
-                        <span class="text-lg font-bold text-slate-800" id="ind-total-ordenes">0</span>
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                        <span class="block font-semibold text-slate-400">Órdenes Revisadas</span>
+                        <span class="text-lg font-bold text-slate-100" id="ind-total-ordenes">0</span>
                     </div>
-                    <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-200">
-                        <span class="block font-semibold text-indigo-600">Cajas Solicitadas</span>
-                        <span class="text-lg font-bold text-indigo-800" id="ind-cajas-sol">0</span>
+                    <div class="bg-indigo-950 p-3 rounded-lg border border-indigo-900">
+                        <span class="block font-semibold text-indigo-300">Cajas Solicitadas</span>
+                        <span class="text-lg font-bold text-indigo-100" id="ind-cajas-sol">0</span>
                     </div>
-                    <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
-                        <span class="block font-semibold text-emerald-600">Cajas Contadas</span>
-                        <span class="text-lg font-bold text-emerald-800" id="ind-cajas-cont">0</span>
+                    <div class="bg-emerald-950 p-3 rounded-lg border border-emerald-900">
+                        <span class="block font-semibold text-emerald-300">Cajas Contadas</span>
+                        <span class="text-lg font-bold text-emerald-100" id="ind-cajas-cont">0</span>
                     </div>
-                    <div class="bg-amber-50 p-3 rounded-lg border border-amber-200">
-                        <span class="block font-semibold text-amber-600">Discrepancias Totales</span>
-                        <span class="text-lg font-bold text-amber-800" id="ind-disc-totales">0</span>
+                    <div class="bg-amber-950 p-3 rounded-lg border border-amber-900">
+                        <span class="block font-semibold text-amber-300">Discrepancias Totales</span>
+                        <span class="text-lg font-bold text-amber-100" id="ind-disc-totales">0</span>
                     </div>
                 </div>
 
                 <!-- Tabla Resumen Órdenes -->
                 <div class="overflow-x-auto mb-6">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-100 text-slate-700 uppercase">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900 text-slate-400 uppercase border-b border-slate-700">
                             <tr>
                                 <th class="p-3">OC</th>
                                 <th class="p-3">Empleado</th>
@@ -249,13 +249,13 @@
                                 <th class="p-3">Estado</th>
                             </tr>
                         </thead>
-                        <tbody id="tabla-resumen-turno-body" class="divide-y divide-slate-200">
+                        <tbody id="tabla-resumen-turno-body" class="divide-y divide-slate-700">
                         </tbody>
                     </table>
                 </div>
 
                 <!-- Botones de Exportación Consolidada -->
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-wrap gap-3 justify-between items-center">
+                <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-wrap gap-3 justify-between items-center">
                     <div class="flex flex-wrap gap-2">
                         <button type="button" onclick="exportarExcelTurno()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3.5 py-2 rounded-lg text-xs shadow flex items-center">
                             <i class="fa-solid fa-file-excel text-base mr-1.5"></i> Excel Turno (.xlsx)
@@ -268,7 +268,7 @@
                         </button>
                     </div>
 
-                    <button type="button" onclick="abrirModalCerrarTurno()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-5 py-2.5 rounded-lg text-sm shadow">
+                    <button type="button" onclick="abrirModalCerrarTurno()" class="bg-slate-700 hover:bg-slate-600 text-slate-100 font-bold px-5 py-2.5 rounded-lg text-sm shadow border border-slate-600">
                         Cerrar Turno Actual
                     </button>
                 </div>
@@ -278,99 +278,99 @@
     </main>
 
     <!-- MODAL: AGREGAR NUEVA ORDEN DE COMPRA -->
-    <div id="modal-nueva-orden" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-xl max-w-md w-full p-5 space-y-4 shadow-xl">
-            <div class="flex justify-between items-center border-b pb-2">
-                <h3 class="font-bold text-slate-800 text-base flex items-center">
-                    <i class="fa-solid fa-file-circle-plus text-emerald-600 mr-2"></i> Registrar Nueva Orden de Compra
+    <div id="modal-nueva-orden" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl text-slate-100">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <h3 class="font-bold text-slate-100 text-base flex items-center">
+                    <i class="fa-solid fa-file-circle-plus text-emerald-400 mr-2"></i> Registrar Nueva Orden de Compra
                 </h3>
-                <button type="button" onclick="cerrarModalNuevaOrden()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button type="button" onclick="cerrarModalNuevaOrden()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
             <div class="space-y-3 text-xs">
                 <div>
-                    <label class="block font-semibold text-slate-600 mb-1">Orden de Compra (OC)</label>
-                    <input type="text" id="modal-oc-input" placeholder="Ej: OC-4405356" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <label class="block font-semibold text-slate-300 mb-1">Orden de Compra (OC)</label>
+                    <input type="text" id="modal-oc-input" placeholder="Ej: OC-4405356" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-600 mb-1">Número de Empleado</label>
-                    <input type="text" id="modal-empleado-input" placeholder="Ej: 189703" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <label class="block font-semibold text-slate-300 mb-1">Número de Empleado</label>
+                    <input type="text" id="modal-empleado-input" placeholder="Ej: 189703" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-600 mb-1">Supervisor a Cargo</label>
-                    <input type="text" id="modal-supervisor-input" placeholder="Ej: Juan Pérez Gómez" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <label class="block font-semibold text-slate-300 mb-1">Supervisor a Cargo</label>
+                    <input type="text" id="modal-supervisor-input" placeholder="Ej: Juan Pérez Gómez" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-600 mb-1">Total Cajas Solicitadas en la Orden</label>
-                    <input type="number" id="modal-cajas-input" placeholder="Ej: 1000" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <label class="block font-semibold text-slate-300 mb-1">Total Cajas Solicitadas en la Orden</label>
+                    <input type="number" id="modal-cajas-input" placeholder="Ej: 1000" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
             </div>
 
-            <div class="flex justify-end gap-2 pt-2 border-t">
-                <button type="button" onclick="cerrarModalNuevaOrden()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs hover:bg-slate-50">Cancelar</button>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                <button type="button" onclick="cerrarModalNuevaOrden()" class="px-3 py-1.5 rounded-lg border border-slate-600 text-xs hover:bg-slate-700 text-slate-300">Cancelar</button>
                 <button type="button" onclick="guardarNuevaOrden()" class="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700">Guardar e Iniciar Auditoría</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL DE DISCREPANCIAS -->
-    <div id="modal-discrepancia" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-xl max-w-md w-full p-5 space-y-4 shadow-xl">
-            <div class="flex justify-between items-center border-b pb-2">
-                <h3 class="font-bold text-slate-800 text-base flex items-center">
-                    <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i> Registrar Discrepancia / Merma
+    <div id="modal-discrepancia" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl text-slate-100">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <h3 class="font-bold text-slate-100 text-base flex items-center">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-400 mr-2"></i> Registrar Discrepancia / Merma
                 </h3>
-                <button type="button" onclick="cerrarModalDiscrepancia()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button type="button" onclick="cerrarModalDiscrepancia()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
             <div class="space-y-3 text-xs">
                 <div>
-                    <label class="block font-semibold text-slate-600 mb-1">Tipo de Discrepancia</label>
-                    <select id="disc-tipo" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <label class="block font-semibold text-slate-300 mb-1">Tipo de Discrepancia</label>
+                    <select id="disc-tipo" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
                         <option value="Faltante">Faltante</option>
                         <option value="Sobrante">Sobrante</option>
                         <option value="Merma">Merma (Caja dañada/recibida)</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-600 mb-1">Cantidad de Cajas Involucradas</label>
-                    <input type="number" id="disc-cantidad" placeholder="Ej: 5" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <label class="block font-semibold text-slate-300 mb-1">Cantidad de Cajas Involucradas</label>
+                    <input type="number" id="disc-cantidad" placeholder="Ej: 5" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-600 mb-1">Ubicación (Tarima y Cama)</label>
+                    <label class="block font-semibold text-slate-300 mb-1">Ubicación (Tarima y Cama)</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <input type="number" id="disc-tarima" placeholder="N° Tarima" class="border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
-                        <input type="number" id="disc-cama" placeholder="N° Cama" class="border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <input type="number" id="disc-tarima" placeholder="N° Tarima" class="bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <input type="number" id="disc-cama" placeholder="N° Cama" class="bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
                     </div>
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-600 mb-1">Descripción u Observaciones</label>
-                    <textarea id="disc-obs" rows="3" placeholder="Detalla el motivo..." class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                    <label class="block font-semibold text-slate-300 mb-1">Descripción u Observaciones</label>
+                    <textarea id="disc-obs" rows="3" placeholder="Detalla el motivo..." class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
                 </div>
             </div>
 
-            <div class="flex justify-end gap-2 pt-2 border-t">
-                <button type="button" onclick="cerrarModalDiscrepancia()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs hover:bg-slate-50">Cancelar</button>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
+                <button type="button" onclick="cerrarModalDiscrepancia()" class="px-3 py-1.5 rounded-lg border border-slate-600 text-xs hover:bg-slate-700 text-slate-300">Cancelar</button>
                 <button type="button" onclick="guardarDiscrepancia()" class="px-4 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700">Guardar Discrepancia</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL: CERRAR TURNO -->
-    <div id="modal-cerrar-turno" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-xl max-w-md w-full p-5 space-y-4 shadow-xl">
-            <div class="flex justify-between items-center border-b pb-2">
-                <h3 class="font-bold text-slate-800 text-base flex items-center">
-                    <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i> Confirmar Cierre de Turno
+    <div id="modal-cerrar-turno" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl text-slate-100">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <h3 class="font-bold text-slate-100 text-base flex items-center">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-400 mr-2"></i> Confirmar Cierre de Turno
                 </h3>
-                <button type="button" onclick="cerrarModalCerrarTurno()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button type="button" onclick="cerrarModalCerrarTurno()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <p class="text-xs text-slate-600">Al cerrar el turno actual, se archivarán las órdenes en el historial, se limpiará el espacio para iniciar una nueva jornada y se guardarán los registros. ¿Deseas descargar el reporte general antes de continuar?</p>
-            <div class="flex flex-col gap-2 pt-2 border-t">
+            <p class="text-xs text-slate-300">Al cerrar el turno actual, se archivarán las órdenes en el historial, se limpiará el espacio para iniciar una nueva jornada y se guardarán los registros. ¿Deseas descargar el reporte general antes de continuar?</p>
+            <div class="flex flex-col gap-2 pt-2 border-t border-slate-700">
                 <button type="button" onclick="exportarPDFTurno()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2 rounded-lg text-xs flex items-center justify-center shadow">
                     <i class="fa-solid fa-file-pdf mr-1.5"></i> Descargar Reporte PDF del Turno y Cerrar
                 </button>
-                <button type="button" onclick="confirmarCierreTurnoSinDescarga()" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold py-2 rounded-lg text-xs shadow">
+                <button type="button" onclick="confirmarCierreTurnoSinDescarga()" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2 rounded-lg text-xs shadow border border-slate-600">
                     Cerrar Turno sin Descargar
                 </button>
             </div>
@@ -411,12 +411,12 @@
                 const sec = document.getElementById(`paso-${p}`);
                 const btn = document.getElementById(`step-btn-${p}`);
                 if(sec) sec.classList.add('hidden');
-                if(btn) btn.className = "flex-1 py-2 px-3 rounded-lg text-center text-slate-500 hover:bg-slate-50 transition";
+                if(btn) btn.className = "flex-1 py-2 px-3 rounded-lg text-center text-slate-400 hover:bg-slate-700 transition";
             });
             const targetSec = document.getElementById(`paso-${paso}`);
             const targetBtn = document.getElementById(`step-btn-${paso}`);
             if(targetSec) targetSec.classList.remove('hidden');
-            if(targetBtn) targetBtn.className = "flex-1 py-2 px-3 rounded-lg text-center bg-indigo-50 text-indigo-700 font-bold border border-indigo-200 transition";
+            if(targetBtn) targetBtn.className = "flex-1 py-2 px-3 rounded-lg text-center bg-indigo-950 text-indigo-300 font-bold border border-indigo-700 transition";
 
             if(paso === 2) {
                 if(!ordenActivaId && turnoData.ordenes.length > 0) {
@@ -488,7 +488,7 @@
             if(contador) contador.innerText = turnoData.ordenes.length;
 
             if(turnoData.ordenes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-400">No hay órdenes registradas en este turno.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">No hay órdenes registradas en este turno.</td></tr>';
                 return;
             }
 
@@ -496,23 +496,23 @@
                 let totalContado = 0;
                 o.skus.forEach(s => totalContado += s.auditadas);
 
-                let badgeEstado = '<span class="bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded text-2xs">En Proceso</span>';
-                if(o.estado === 'Finalizado sin diferencias') badgeEstado = '<span class="bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded text-2xs">Sin Diferencias</span>';
-                if(o.estado === 'Finalizado con discrepancias') badgeEstado = '<span class="bg-indigo-100 text-indigo-800 font-semibold px-2 py-0.5 rounded text-2xs">Con Discrepancias</span>';
+                let badgeEstado = '<span class="bg-amber-950 text-amber-300 border border-amber-800 font-semibold px-2 py-0.5 rounded text-2xs">En Proceso</span>';
+                if(o.estado === 'Finalizado sin diferencias') badgeEstado = '<span class="bg-emerald-950 text-emerald-300 border border-emerald-800 font-semibold px-2 py-0.5 rounded text-2xs">Sin Diferencias</span>';
+                if(o.estado === 'Finalizado con discrepancias') badgeEstado = '<span class="bg-indigo-950 text-indigo-300 border border-indigo-800 font-semibold px-2 py-0.5 rounded text-2xs">Con Discrepancias</span>';
 
                 const tr = document.createElement('tr');
-                tr.className = "border-t border-slate-100 hover:bg-slate-50";
+                tr.className = "border-t border-slate-700 hover:bg-slate-750";
                 tr.innerHTML = `
-                    <td class="p-3 font-bold text-slate-800">${o.oc}</td>
-                    <td class="p-3">${o.empleado}</td>
-                    <td class="p-3">${o.supervisor || 'N/A'}</td>
-                    <td class="p-3">${o.totalEsperado}</td>
-                    <td class="p-3 font-semibold">${totalContado}</td>
-                    <td class="p-3">${o.skus.length} SKUs</td>
+                    <td class="p-3 font-bold text-slate-100">${o.oc}</td>
+                    <td class="p-3 text-slate-300">${o.empleado}</td>
+                    <td class="p-3 text-slate-300">${o.supervisor || 'N/A'}</td>
+                    <td class="p-3 text-slate-300">${o.totalEsperado}</td>
+                    <td class="p-3 font-semibold text-slate-100">${totalContado}</td>
+                    <td class="p-3 text-slate-300">${o.skus.length} SKUs</td>
                     <td class="p-3">${badgeEstado}</td>
                     <td class="p-3 text-center space-x-2">
                         <button type="button" onclick="seleccionarOrden('${o.id}')" class="bg-indigo-600 text-white px-2.5 py-1 rounded text-xs hover:bg-indigo-700">Auditar</button>
-                        <button type="button" onclick="eliminarOrden('${o.id}')" class="text-rose-600 hover:text-rose-800 px-1"><i class="fa-solid fa-trash-can"></i></button>
+                        <button type="button" onclick="eliminarOrden('${o.id}')" class="text-rose-400 hover:text-rose-300 px-1"><i class="fa-solid fa-trash-can"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -605,20 +605,20 @@
             if(badge) badge.innerText = `${orden.skus.length} SKUs`;
 
             if(orden.skus.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-slate-400">No hay SKUs en esta orden.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-slate-500">No hay SKUs en esta orden.</td></tr>';
                 document.getElementById('panel-conteo-sku').classList.add('hidden');
                 return;
             }
 
             orden.skus.forEach(s => {
                 const tr = document.createElement('tr');
-                tr.className = "border-t border-slate-100";
+                tr.className = "border-t border-slate-700";
                 tr.innerHTML = `
-                    <td class="p-2.5 font-bold text-slate-700">${s.codigo}</td>
-                    <td class="p-2.5">${s.esperadas} cajas</td>
+                    <td class="p-2.5 font-bold text-slate-100">${s.codigo}</td>
+                    <td class="p-2.5 text-slate-300">${s.esperadas} cajas</td>
                     <td class="p-2.5 text-center space-x-2">
-                        <button type="button" onclick="seleccionarSKUConteoDirecto('${s.codigo}')" class="bg-indigo-100 text-indigo-700 font-semibold px-2 py-1 rounded text-xs hover:bg-indigo-200">Tarimas</button>
-                        <button type="button" onclick="eliminarSKUOrdenActiva('${s.codigo}')" class="text-rose-600 hover:text-rose-800"><i class="fa-solid fa-trash-can"></i></button>
+                        <button type="button" onclick="seleccionarSKUConteoDirecto('${s.codigo}')" class="bg-indigo-900 text-indigo-200 border border-indigo-700 font-semibold px-2 py-1 rounded text-xs hover:bg-indigo-800">Tarimas</button>
+                        <button type="button" onclick="eliminarSKUOrdenActiva('${s.codigo}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash-can"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -687,7 +687,7 @@
             container.innerHTML = '';
 
             if(sku.tarimas.length === 0) {
-                container.innerHTML = '<div class="text-xs text-slate-400 p-3 bg-slate-50 rounded-lg text-center">No hay tarimas. Presiona "Agregar Tarima".</div>';
+                container.innerHTML = '<div class="text-xs text-slate-400 p-3 bg-slate-900 rounded-lg text-center border border-slate-700">No hay tarimas. Presiona "Agregar Tarima".</div>';
                 return;
             }
 
@@ -696,30 +696,30 @@
                 tarima.camas.forEach(c => totalTarima += (c.cantidad || 0));
 
                 const tDiv = document.createElement('div');
-                tDiv.className = "bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3";
+                tDiv.className = "bg-slate-900 border border-slate-700 rounded-lg p-4 space-y-3";
 
                 let camasHTML = '';
                 tarima.camas.forEach((cama, cIdx) => {
                     camasHTML += `
                         <div class="flex items-center space-x-2">
-                            <span class="text-xs font-semibold text-slate-600 w-16">Cama ${cIdx + 1}:</span>
-                            <input type="number" value="${cama.cantidad}" oninput="actualizarCantidadCamaDirecto('${sku.codigo}', ${tIdx}, ${cIdx}, this.value)" class="w-24 border border-slate-300 rounded px-2 py-1 text-xs text-center font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <span class="text-xs font-semibold text-slate-400 w-16">Cama ${cIdx + 1}:</span>
+                            <input type="number" value="${cama.cantidad}" oninput="actualizarCantidadCamaDirecto('${sku.codigo}', ${tIdx}, ${cIdx}, this.value)" class="w-24 bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-center text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
                             <span class="text-xs text-slate-400">cajas</span>
-                            <button type="button" onclick="eliminarCama('${sku.codigo}', ${tIdx}, ${cIdx})" class="text-rose-500 hover:text-rose-700 text-xs px-2"><i class="fa-solid fa-minus-circle"></i></button>
+                            <button type="button" onclick="eliminarCama('${sku.codigo}', ${tIdx}, ${cIdx})" class="text-rose-400 hover:text-rose-300 text-xs px-2"><i class="fa-solid fa-minus-circle"></i></button>
                         </div>
                     `;
                 });
 
                 tDiv.innerHTML = `
-                    <div class="flex justify-between items-center border-b pb-2">
-                        <span class="font-bold text-slate-700 text-xs">Tarima ${tIdx + 1} (Total: ${totalTarima} cajas)</span>
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                        <span class="font-bold text-slate-200 text-xs">Tarima ${tIdx + 1} (Total: ${totalTarima} cajas)</span>
                         <div class="space-x-2">
-                            <button type="button" onclick="agregarCama('${sku.codigo}', ${tIdx})" class="text-xs bg-indigo-100 text-indigo-700 font-semibold px-2 py-1 rounded">+ Cama</button>
-                            <button type="button" onclick="eliminarTarima('${sku.codigo}', ${tIdx})" class="text-xs bg-rose-100 text-rose-700 font-semibold px-2 py-1 rounded">Borrar Tarima</button>
+                            <button type="button" onclick="agregarCama('${sku.codigo}', ${tIdx})" class="text-xs bg-indigo-900 text-indigo-200 border border-indigo-700 font-semibold px-2 py-1 rounded hover:bg-indigo-800">+ Cama</button>
+                            <button type="button" onclick="eliminarTarima('${sku.codigo}', ${tIdx})" class="text-xs bg-rose-950 text-rose-300 border border-rose-800 font-semibold px-2 py-1 rounded hover:bg-rose-900">Borrar Tarima</button>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                        ${camasHTML || '<span class="text-xs text-slate-400">Sin camas.</span>'}
+                        ${camasHTML || '<span class="text-xs text-slate-500">Sin camas.</span>'}
                     </div>
                 `;
                 container.appendChild(tDiv);
@@ -838,7 +838,7 @@
             let totalSolG = 0, totalContG = 0, totalDiscG = 0;
 
             if(totalOrd === 0) {
-                tbody.innerHTML = '<tr><td colspan="11" class="p-4 text-center text-slate-400">No hay órdenes registradas.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="11" class="p-4 text-center text-slate-500">No hay órdenes registradas.</td></tr>';
                 document.getElementById('ind-total-ordenes').innerText = '0';
                 document.getElementById('ind-cajas-sol').innerText = '0';
                 document.getElementById('ind-cajas-cont').innerText = '0';
@@ -864,22 +864,23 @@
                 totalContG += contO;
                 totalDiscG += (faltO + sobO + merO);
 
-                let badgeEstado = '<span class="bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded text-2xs">En Proceso</span>';
-                if(o.estado.includes('sin')) badgeEstado = '<span class="bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded text-2xs">Sin Diferencias</span>';
-                if(o.estado.includes('con')) badgeEstado = '<span class="bg-indigo-100 text-indigo-800 font-semibold px-2 py-0.5 rounded text-2xs">Con Discrepancia</span>';
+                let badgeEstado = '<span class="bg-amber-950 text-amber-300 border border-amber-800 font-semibold px-2 py-0.5 rounded text-2xs">En Proceso</span>';
+                if(o.estado.includes('sin')) badgeEstado = '<span class="bg-emerald-950 text-emerald-300 border border-emerald-800 font-semibold px-2 py-0.5 rounded text-2xs">Sin Diferencias</span>';
+                if(o.estado.includes('con')) badgeEstado = '<span class="bg-indigo-950 text-indigo-300 border border-indigo-800 font-semibold px-2 py-0.5 rounded text-2xs">Con Discrepancia</span>';
 
                 const tr = document.createElement('tr');
+                tr.className = "border-t border-slate-700 hover:bg-slate-750";
                 tr.innerHTML = `
-                    <td class="p-3 font-bold text-slate-800">${o.oc}</td>
-                    <td class="p-3">${o.empleado}</td>
-                    <td class="p-3">${o.supervisor || 'N/A'}</td>
-                    <td class="p-3">${o.horaInicio}</td>
-                    <td class="p-3">${espO}</td>
-                    <td class="p-3 font-bold">${contO}</td>
-                    <td class="p-3">${skusO}</td>
-                    <td class="p-3 text-rose-600 font-bold">${faltO}</td>
-                    <td class="p-3 text-indigo-600 font-bold">${sobO}</td>
-                    <td class="p-3 text-amber-600 font-bold">${merO}</td>
+                    <td class="p-3 font-bold text-slate-100">${o.oc}</td>
+                    <td class="p-3 text-slate-300">${o.empleado}</td>
+                    <td class="p-3 text-slate-300">${o.supervisor || 'N/A'}</td>
+                    <td class="p-3 text-slate-300">${o.horaInicio}</td>
+                    <td class="p-3 text-slate-300">${espO}</td>
+                    <td class="p-3 font-bold text-slate-100">${contO}</td>
+                    <td class="p-3 text-slate-300">${skusO}</td>
+                    <td class="p-3 text-rose-400 font-bold">${faltO}</td>
+                    <td class="p-3 text-indigo-400 font-bold">${sobO}</td>
+                    <td class="p-3 text-amber-400 font-bold">${merO}</td>
                     <td class="p-3">${badgeEstado}</td>
                 `;
                 tbody.appendChild(tr);
