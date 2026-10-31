@@ -662,8 +662,10 @@
             if(!sku) return;
 
             document.getElementById('panel-conteo-sku').classList.remove('hidden');
-            document.getElementById('sku-activo-titulo').innerText = sku.codigo;
-            document.getElementById('sku-activo-esperadas').innerText = sku.esperadas;
+            
+            // Asignación correcta de cajas esperadas
+            const espElem = document.getElementById('sku-activo-esperadas');
+            if(espElem) espElem.innerText = sku.esperadas;
 
             renderizarTarimasSKU(sku);
         }
@@ -956,7 +958,7 @@
             document.body.removeChild(link);
         }
 
-        // PDF INDIVIDUAL DE LA ORDEN ACTIVA (CON TARIMAS Y CAMAS CONTADAS)
+        // PDF INDIVIDUAL EJECUTIVO (CON PRESENTACIÓN PROFESIONAL, SUPERVISOR Y RESUMEN DE TARIMAS/CAMAS)
         function exportarPDFOrdenActiva() {
             const orden = obtenerOrdenActiva();
             if(!orden) { alert('Selecciona una orden activa primero.'); return; }
@@ -964,6 +966,7 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
+            // Encabezado Ejecutivo Profesional
             doc.setFontSize(16);
             doc.setTextColor(79, 70, 229);
             doc.text("REPORTE DE AUDITORÍA DE RECIBO - ORDEN DE COMPRA", 14, 18);
@@ -1024,11 +1027,12 @@
             doc.save(`Auditoria_OC_${orden.oc}.pdf`);
         }
 
-        // REPORTE PDF EJECUTIVO CONSOLIDADO DEL TURNO (CON TARIMAS Y CAMAS CONTADAS)
+        // REPORTE PDF EJECUTIVO CONSOLIDADO DEL TURNO (CON PRESENTACIÓN PROFESIONAL, SUPERVISOR Y RESUMEN DE TARIMAS/CAMAS)
         function exportarPDFTurno() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
+            // Encabezado Ejecutivo Profesional
             doc.setFontSize(16);
             doc.setTextColor(79, 70, 229);
             doc.text("REPORTE DE AUDITORÍA DE RECIBO - TURNO", 14, 18);
