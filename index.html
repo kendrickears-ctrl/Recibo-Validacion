@@ -313,7 +313,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE DISCREPANCIAS -->
+    <!-- MODAL DE DISCREPANCIAS (SIN CAMPOS DE TARIMA Y CAMA) -->
     <div id="modal-discrepancia" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl text-slate-100">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2">
@@ -335,13 +335,6 @@
                 <div>
                     <label class="block font-semibold text-slate-300 mb-1">Cantidad de Cajas Involucradas</label>
                     <input type="number" id="disc-cantidad" placeholder="Ej: 5" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Ubicación (Tarima y Cama)</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="number" id="disc-tarima" placeholder="N° Tarima" class="bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
-                        <input type="number" id="disc-cama" placeholder="N° Cama" class="bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-300 mb-1">Descripción u Observaciones</label>
@@ -380,7 +373,7 @@
     <script>
         // ESTADO GLOBAL DEL TURNO Y HISTORIAL
         let turnoData = {
-            idTurno: 'TURNO-' + new Date().toISOString().slice(0,10),
+            idTurno: 'TURNO-' + new Date().toISOString().slice(0,10) + '-' + Math.floor(Math.random()*1000),
             fechaInicio: new Date().toLocaleString(),
             ordenes: [] 
         };
@@ -662,8 +655,6 @@
             if(!sku) return;
 
             document.getElementById('panel-conteo-sku').classList.remove('hidden');
-            
-            // Asignación correcta de cajas esperadas
             const espElem = document.getElementById('sku-activo-esperadas');
             if(espElem) espElem.innerText = sku.esperadas;
 
@@ -797,8 +788,6 @@
         function abrirModalDiscrepancia() {
             document.getElementById('disc-tipo').value = 'Faltante';
             document.getElementById('disc-cantidad').value = '';
-            document.getElementById('disc-tarima').value = '';
-            document.getElementById('disc-cama').value = '';
             document.getElementById('disc-obs').value = '';
             document.getElementById('modal-discrepancia').classList.remove('hidden');
         }
@@ -815,14 +804,12 @@
 
             const tipo = document.getElementById('disc-tipo').value;
             const cantidad = parseInt(document.getElementById('disc-cantidad').value) || 0;
-            const tarima = parseInt(document.getElementById('disc-tarima').value) || 1;
-            const cama = parseInt(document.getElementById('disc-cama').value) || 1;
             const obs = document.getElementById('disc-obs').value.trim();
 
             if(cantidad <= 0) { alert('Ingresa cantidad válida.'); return; }
 
             sku.discrepancias.push({
-                tipo, cantidad, tarima, cama, obs, empleado: orden.empleado, fechaHora: new Date().toLocaleString()
+                tipo, cantidad, obs, empleado: orden.empleado, fechaHora: new Date().toLocaleString()
             });
 
             cerrarModalDiscrepancia();
@@ -917,8 +904,6 @@
         // EXPORTAR CSV TABULAR UNIFICADO
         function exportarCSVTurno() {
             let csvLines = [];
-            let fechaActual = new Date().toLocaleDateString();
-
             csvLines.push("ORDEN_COMPRA,EMPLEADO,SUPERVISOR,HORA_INICIO,HORA_FIN,ESTADO_ORDEN,SKU,CAJAS_ESPERADAS_SKU,CAJAS_CONTABILIZADAS_SKU,DIFERENCIA_SKU,TARIMA,CAMA,CAJAS_CAMA,DISCREPANCIA_TIPO,DISCREPANCIA_CANTIDAD,DISCREPANCIA_OBS");
 
             turnoData.ordenes.forEach(o => {
@@ -927,18 +912,22 @@
                 } else {
                     o.skus.forEach(s => {
                         let diffSku = s.auditadas - s.esperadas;
-                        
                         if(s.tarimas.length === 0) {
-                            csvLines.push(`${o.oc},${o.empleado},"${o.supervisor||'N/A'}",${o.horaInicio||''},${o.horaFin||''},"${o.estado}","${s.codigo}",${s.esperadas},${s.auditadas},${diffSku},N/A,N/A,0,N/A,0,""`);
+                            let discTxt = "Sin discrepancia", discCant = 0, discObs = "N/A";
+                            if(s.discrepancias.length > 0) {
+                                discTxt = s.discrepancias[0].tipo;
+                                discCant = s.discrepancias[0].cantidad;
+                                discObs = (s.discrepancias[0].obs || '').replace(/,/g, ' ');
+                            }
+                            csvLines.push(`${o.oc},${o.empleado},"${o.supervisor||'N/A'}",${o.horaInicio||''},${o.horaFin||''},"${o.estado}","${s.codigo}",${s.esperadas},${s.auditadas},${diffSku},N/A,N/A,0,${discTxt},${discCant},"${discObs}"`);
                         } else {
                             s.tarimas.forEach((t, tIdx) => {
                                 t.camas.forEach((c, cIdx) => {
-                                    let discTxt = "N/A", discCant = 0, discObs = "";
-                                    let disc = s.discrepancias.find(d => d.tarima == (tIdx+1) && d.cama == (cIdx+1));
-                                    if(disc) {
-                                        discTxt = disc.tipo;
-                                        discCant = disc.cantidad;
-                                        discObs = (disc.obs || '').replace(/,/g, ' ');
+                                    let discTxt = "Sin discrepancia", discCant = 0, discObs = "N/A";
+                                    if(s.discrepancias.length > 0) {
+                                        discTxt = s.discrepancias[0].tipo;
+                                        discCant = s.discrepancias[0].cantidad;
+                                        discObs = (s.discrepancias[0].obs || '').replace(/,/g, ' ');
                                     }
                                     csvLines.push(`${o.oc},${o.empleado},"${o.supervisor||'N/A'}",${o.horaInicio||''},${o.horaFin||''},"${o.estado}","${s.codigo}",${s.esperadas},${s.auditadas},${diffSku},Tarima_${tIdx+1},Cama_${cIdx+1},${c.cantidad},${discTxt},${discCant},"${discObs}"`);
                                 });
@@ -958,27 +947,27 @@
             document.body.removeChild(link);
         }
 
-        // PDF INDIVIDUAL EJECUTIVO (CON PRESENTACIÓN PROFESIONAL, SUPERVISOR Y RESUMEN DE TARIMAS/CAMAS)
+        // PDF INDIVIDUAL EXACTO ESTILO EJECUTIVO (CON COLUMNAS TARIMAS Y CAMAS LADO A LADO)
         function exportarPDFOrdenActiva() {
             const orden = obtenerOrdenActiva();
             if(!orden) { alert('Selecciona una orden activa primero.'); return; }
 
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            const doc = new jsPDF('l', 'mm', 'a4');
 
-            // Encabezado Ejecutivo Profesional
-            doc.setFontSize(16);
-            doc.setTextColor(79, 70, 229);
-            doc.text("REPORTE DE AUDITORÍA DE RECIBO - ORDEN DE COMPRA", 14, 18);
-
+            doc.setFontSize(14);
+            doc.setTextColor(200, 200, 200);
+            doc.setFillColor(30, 41, 59);
+            doc.rect(10, 10, 277, 16, 'F');
+            doc.text(`REPORTE DE AUDITORÍA DE RECIBO`, 14, 21);
             doc.setFontSize(9);
-            doc.setTextColor(100, 100, 100);
-            doc.text(`Orden de Compra: ${orden.oc}`, 14, 25);
-            doc.text(`Auditor: ${orden.empleado} | Supervisor: ${orden.supervisor || 'N/A'}`, 14, 30);
-            doc.text(`Hora de Inicio: ${orden.horaInicio || 'N/A'} | Hora de Fin: ${orden.horaFin || 'En Proceso'}`, 14, 35);
+            doc.text(`Turno: ${turnoData.idTurno} | Generado: ${new Date().toLocaleString()}`, 180, 21);
 
-            let totalTarimasO = 0;
-            let totalCamasO = 0;
+            doc.setFontSize(10);
+            doc.setTextColor(50, 50, 50);
+            doc.text(`Orden: ${orden.oc} | Empleado: ${orden.empleado} | Supervisor: ${orden.supervisor || 'N/A'} | Estado: ${orden.estado}`, 14, 32);
+
+            let totalTarimasO = 0, totalCamasO = 0;
             const tableRows = [];
 
             orden.skus.forEach(s => {
@@ -989,33 +978,46 @@
                 totalCamasO += camasSKU;
 
                 let diff = s.auditadas - s.esperadas;
-                let f = diff < 0 ? Math.abs(diff) : 0;
-                let sob = diff > 0 ? diff : 0;
-                let m = 0;
-                s.discrepancias.forEach(d => { if(d.tipo==='Merma') m += d.cantidad; });
+                let tipoDisc = "Sin discrepancia";
+                let cantDisc = 0;
+                let obsDisc = "N/A";
 
-                tableRows.push([s.codigo, s.esperadas, s.auditadas, tarimasSKU, camasSKU, f, sob, m]);
+                if (s.discrepancias.length > 0) {
+                    tipoDisc = s.discrepancias[0].tipo;
+                    cantDisc = s.discrepancias[0].cantidad;
+                    obsDisc = s.discrepancias[0].obs || "";
+                } else if (diff !== 0) {
+                    tipoDisc = diff < 0 ? "Faltante" : "Sobrante";
+                    cantDisc = Math.abs(diff);
+                    obsDisc = "Diferencia en conteo";
+                }
+
+                tableRows.push([
+                    s.codigo, 
+                    s.esperadas, 
+                    s.auditadas, 
+                    diff, 
+                    tipoDisc, 
+                    obsDisc, 
+                    cantDisc, 
+                    tarimasSKU, 
+                    camasSKU, 
+                    s.discrepancias.length > 0 ? s.discrepancias[0].fechaHora : new Date().toLocaleString()
+                ]);
             });
 
             doc.autoTable({
-                head: [['SKU', 'Esperadas', 'Contabilizadas', 'Tarimas', 'Camas', 'Faltantes', 'Sobrantes', 'Mermas']],
+                head: [['SKU', 'Cajas Sol.', 'Cajas Audit.', 'Dif.', 'Tipo Disc.', 'Comentario Discrepancia', 'Cajas Disc.', 'Tarimas', 'Camas', 'Fecha/Hora']],
                 body: tableRows,
-                startY: 42,
+                startY: 37,
                 theme: 'grid',
-                headStyles: { fillColor: [79, 70, 229] }
+                headStyles: { fillColor: [30, 41, 59] },
+                styles: { fontSize: 8 }
             });
 
             let finalY = doc.lastAutoTable.finalY + 10;
-            doc.setFontSize(11);
-            doc.setTextColor(50, 50, 50);
-            doc.text("Resumen Final e Indicadores de la Orden", 14, finalY);
-
-            doc.setFontSize(9);
-            doc.text(`Total Cajas Solicitadas: ${orden.totalEsperado}`, 14, finalY + 6);
-            let totalContO = 0; orden.skus.forEach(s => totalContO += s.auditadas);
-            doc.text(`Total Cajas Contabilizadas: ${totalContO}`, 14, finalY + 12);
-            doc.text(`Tarimas contadas: ${totalTarimasO}   |   Camas contadas: ${totalCamasO}`, 14, finalY + 18);
-            doc.text(`Estado Final: ${orden.estado}`, 14, finalY + 24);
+            doc.setFontSize(10);
+            doc.text(`Resumen Orden - Tarimas contadas: ${totalTarimasO}  |  Camas contadas: ${totalCamasO}`, 14, finalY);
 
             const pageCount = doc.internal.getNumberOfPages();
             for(let i = 1; i <= pageCount; i++) {
@@ -1027,23 +1029,25 @@
             doc.save(`Auditoria_OC_${orden.oc}.pdf`);
         }
 
-        // REPORTE PDF EJECUTIVO CONSOLIDADO DEL TURNO (CON PRESENTACIÓN PROFESIONAL, SUPERVISOR Y RESUMEN DE TARIMAS/CAMAS)
+        // REPORTE PDF CONSOLIDADO DEL TURNO (ESTILO EJECUTIVO EXACTO DE LA IMAGEN)
         function exportarPDFTurno() {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            const doc = new jsPDF('l', 'mm', 'a4');
 
-            // Encabezado Ejecutivo Profesional
-            doc.setFontSize(16);
-            doc.setTextColor(79, 70, 229);
-            doc.text("REPORTE DE AUDITORÍA DE RECIBO - TURNO", 14, 18);
-
+            doc.setFontSize(14);
+            doc.setTextColor(255, 255, 255);
+            doc.setFillColor(30, 41, 59);
+            doc.rect(10, 10, 277, 16, 'F');
+            doc.text(`REPORTE DE AUDITORÍA DE RECIBO`, 14, 21);
             doc.setFontSize(9);
-            doc.setTextColor(100, 100, 100);
-            doc.text(`Total Órdenes Revisadas: ${turnoData.ordenes.length}`, 14, 25);
+            doc.text(`Turno: ${turnoData.idTurno} | Generado: ${new Date().toLocaleString()}`, 175, 21);
 
-            let tableRows = [];
-            let totalSol = 0, totalCont = 0;
-            let totalTarimasTurno = 0, totalCamasTurno = 0;
+            doc.setFontSize(11);
+            doc.setTextColor(30, 30, 30);
+            doc.text("RESUMEN GENERAL DEL TURNO", 14, 34);
+
+            let totalSol = 0, totalCont = 0, totalTarimasTurno = 0, totalCamasTurno = 0;
+            let sumFalt = 0, sumSob = 0;
 
             turnoData.ordenes.forEach(o => {
                 let esp = o.totalEsperado;
@@ -1051,43 +1055,96 @@
                 o.skus.forEach(s => cont += s.auditadas);
                 totalSol += esp;
                 totalCont += cont;
-
-                let tarO = 0, camO = 0;
                 o.skus.forEach(s => {
-                    tarO += s.tarimas.length;
-                    s.tarimas.forEach(t => camO += t.camas.length);
-                });
-                totalTarimasTurno += tarO;
-                totalCamasTurno += camO;
-
-                let falt = 0, sob = 0, mer = 0;
-                o.skus.forEach(s => {
+                    totalTarimasTurno += s.tarimas.length;
+                    s.tarimas.forEach(t => totalCamasTurno += t.camas.length);
                     let diff = s.auditadas - s.esperadas;
-                    if(diff < 0) falt += Math.abs(diff);
-                    if(diff > 0) sob += diff;
-                    s.discrepancias.forEach(d => { if(d.tipo==='Merma') mer += d.cantidad; });
+                    if(diff < 0) sumFalt += Math.abs(diff);
+                    if(diff > 0) sumSob += diff;
                 });
-
-                tableRows.push([o.oc, o.empleado, o.supervisor || 'N/A', esp, cont, tarO, camO, falt, sob, mer, o.estado]);
             });
 
             doc.autoTable({
-                head: [['OC', 'Auditor', 'Supervisor', 'Solicitadas', 'Contadas', 'Tarimas', 'Camas', 'Falt', 'Sob', 'Merma', 'Estado']],
-                body: tableRows,
-                startY: 32,
+                head: [['Órdenes', 'SKUs', 'Cod. Contados', 'Cajas Solicitadas', 'Cajas Auditadas', 'Tarimas', 'Camas', 'Sobrantes', 'Falltantes', 'Mermas']],
+                body: [[
+                    turnoData.ordenes.length,
+                    turnoData.ordenes.reduce((acc, o) => acc + o.skus.length, 0),
+                    turnoData.ordenes.reduce((acc, o) => acc + o.skus.reduce((a, s) => a + (s.auditadas > 0 ? 1 : 0), 0), 0),
+                    totalSol,
+                    totalCont,
+                    totalTarimasTurno,
+                    totalCamasTurno,
+                    sumSob,
+                    sumFalt,
+                    0
+                ]],
+                startY: 38,
                 theme: 'grid',
-                headStyles: { fillColor: [79, 70, 229] }
+                headStyles: { fillColor: [51, 65, 85] },
+                styles: { fontSize: 8, halign: 'center' }
             });
 
-            let finalY = doc.lastAutoTable.finalY + 10;
+            let currentY = doc.lastAutoTable.finalY + 12;
             doc.setFontSize(11);
-            doc.setTextColor(50, 50, 50);
-            doc.text("Resumen Final e Indicadores del Turno", 14, finalY);
+            doc.text("DETALLE POR ORDEN DE COMPRA", 14, currentY);
+            currentY += 4;
 
-            doc.setFontSize(9);
-            doc.text(`Total Cajas Solicitadas: ${totalSol} | Total Cajas Contabilizadas: ${totalCont}`, 14, finalY + 6);
-            doc.text(`Tarimas contadas: ${totalTarimasTurno}   |   Camas contadas: ${totalCamasTurno}`, 14, finalY + 12);
-            doc.text(`Fecha de Generación: ${new Date().toLocaleString()}`, 14, finalY + 18);
+            turnoData.ordenes.forEach(o => {
+                doc.setFontSize(9);
+                doc.setTextColor(70, 70, 70);
+                doc.text(`Orden: ${o.oc} | Empleado: ${o.empleado} | Supervisor: ${o.supervisor || 'N/A'} | Estado: ${o.estado}`, 14, currentY);
+                currentY += 2;
+
+                let tableRows = [];
+                o.skus.forEach(s => {
+                    let tarimasSKU = s.tarimas.length;
+                    let camasSKU = 0;
+                    s.tarimas.forEach(t => camasSKU += t.camas.length);
+
+                    let diff = s.auditadas - s.esperadas;
+                    let tipoDisc = "Sin discrepancia";
+                    let cantDisc = 0;
+                    let obsDisc = "N/A";
+
+                    if (s.discrepancias.length > 0) {
+                        tipoDisc = s.discrepancias[0].tipo;
+                        cantDisc = s.discrepancias[0].cantidad;
+                        obsDisc = s.discrepancias[0].obs || "";
+                    } else if (diff !== 0) {
+                        tipoDisc = diff < 0 ? "Faltante" : "Sobrante";
+                        cantDisc = Math.abs(diff);
+                        obsDisc = "Diferencia en conteo";
+                    }
+
+                    tableRows.push([
+                        s.codigo,
+                        s.esperadas,
+                        s.auditadas,
+                        diff,
+                        tipoDisc,
+                        obsDisc,
+                        cantDisc,
+                        tarimasSKU,
+                        camasSKU,
+                        s.discrepancias.length > 0 ? s.discrepancias[0].fechaHora : new Date().toLocaleString()
+                    ]);
+                });
+
+                doc.autoTable({
+                    head: [['SKU', 'Cajas Sol.', 'Cajas Audit.', 'Dif.', 'Tipo Disc.', 'Comentario Discrepancia', 'Cajas Disc.', 'Tarimas', 'Camas', 'Fecha/Hora']],
+                    body: tableRows,
+                    startY: currentY,
+                    theme: 'grid',
+                    headStyles: { fillColor: [79, 70, 229] },
+                    styles: { fontSize: 7 }
+                });
+
+                currentY = doc.lastAutoTable.finalY + 8;
+                if(currentY > 180) {
+                    doc.addPage();
+                    currentY = 20;
+                }
+            });
 
             const pageCount = doc.internal.getNumberOfPages();
             for(let i = 1; i <= pageCount; i++) {
