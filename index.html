@@ -3,1187 +3,904 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Conteo de Recibo - Control por Turno</title>
-    <!-- Tailwind CSS -->
+    <title>Auditoría de Cartones</title>
+    <!-- Tailwind CSS & FontAwesome -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SheetJS (Excel) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- jsPDF & AutoTable -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- ZXing Library UMD v0.19.1 -->
+    <script type="text/javascript" src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
     <style>
-        .accordion-content { display: none; }
-        .accordion-content.active { display: block; }
+        body { background-color: #f3f4f6; }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans min-h-screen">
+<body class="font-sans antialiased pb-24">
 
-    <!-- Encabezado Principal (Diseño Oscuro Original) -->
-    <header class="bg-slate-800 text-white shadow-md sticky top-0 z-40 border-b border-slate-700">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <i class="fa-solid fa-boxes-packing text-2xl text-indigo-400"></i>
-                <h1 class="text-xl font-bold tracking-wide">Auditoría de Recibo - Turno Activo</h1>
+    <!-- Header -->
+    <header class="bg-emerald-600 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-boxes-stacked text-2xl"></i>
+                <h1 class="text-xl font-bold tracking-wide">Auditoría de Cartones</h1>
             </div>
-            <div class="flex items-center gap-2">
-                <button type="button" onclick="abrirModalCerrarTurno()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow transition">
-                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> Cerrar Turno y Reiniciar
+            <div class="flex items-center space-x-3">
+                <span id="badgeCount" class="bg-emerald-700 text-xs px-2.5 py-1 rounded-full font-medium">0 registros</span>
+                <button onclick="exportToExcelModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-3 py-1.5 rounded-lg flex items-center space-x-1 shadow transition">
+                    <i class="fa-solid fa-file-excel"></i><span>Exportar</span>
                 </button>
-                <div id="header-status" class="text-xs bg-indigo-900 text-indigo-200 border border-indigo-700 px-2.5 py-1 rounded-full font-medium">Turno Abierto</div>
             </div>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+    <!-- Main Container -->
+    <main class="max-w-4xl mx-auto p-4 space-y-6">
 
-        <!-- NAVEGACIÓN POR PESTAÑAS (Estilo Oscuro) -->
-        <div class="bg-slate-800 rounded-xl shadow-sm p-3 flex justify-between text-xs sm:text-sm font-medium border border-slate-700 overflow-x-auto gap-2">
-            <button type="button" id="step-btn-1" onclick="cambiarPestana(1)" class="flex-1 py-2 px-3 rounded-lg text-center bg-indigo-900/60 text-indigo-300 font-bold border border-indigo-700 transition">
-                1. Órdenes del Turno
-            </button>
-            <button type="button" id="step-btn-2" onclick="cambiarPestana(2)" class="flex-1 py-2 px-3 rounded-lg text-center text-slate-400 hover:bg-slate-700 transition">
-                2. Captura de SKU y Tarimas
-            </button>
-            <button type="button" id="step-btn-3" onclick="cambiarPestana(3)" class="flex-1 py-2 px-3 rounded-lg text-center text-slate-400 hover:bg-slate-700 transition">
-                3. Resumen y Reportes Generales
-            </button>
-        </div>
-
-        <!-- SECCIÓN 1: GESTIÓN DE ÓRDENES DEL TURNO -->
-        <section id="paso-1" class="space-y-6">
-            <div class="bg-slate-800 rounded-xl shadow-sm border border-slate-700 p-5 flex flex-wrap justify-between items-center gap-4">
-                <div>
-                    <h2 class="text-lg font-bold text-slate-100 flex items-center">
-                        <i class="fa-solid fa-clipboard-list text-indigo-400 mr-2"></i> Órdenes de Compra del Turno Actual
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-0.5">Administra, agrega y da seguimiento a todas las órdenes de la jornada sin límite.</p>
+        <!-- Form Card -->
+        <section class="bg-white rounded-xl shadow-md p-5 space-y-4 border border-gray-100">
+            <h2 class="text-md font-semibold text-gray-700 border-b pb-2 flex justify-between items-center">
+                <span id="formTitleText"><i class="fa-solid fa-clipboard-list text-emerald-600 mr-2"></i> Captura de Auditoría</span>
+                <div class="space-x-2">
+                    <button id="btnCancelarEdicion" onclick="cancelarEdicion()" class="hidden text-xs text-gray-500 hover:text-gray-700 items-center space-x-1">
+                        <i class="fa-solid fa-ban"></i><span>Cancelar Edición</span>
+                    </button>
+                    <button onclick="resetForm()" class="text-xs text-red-500 hover:text-red-700 items-center space-x-1">
+                        <i class="fa-solid fa-rotate-right"></i><span>Limpiar Formulario</span>
+                    </button>
                 </div>
-                <button type="button" onclick="abrirModalNuevaOrden()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-lg text-sm shadow transition flex items-center">
-                    <i class="fa-solid fa-plus mr-2"></i> Agregar Nueva Orden
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- 1. Empleado -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1 flex justify-between">
+                        <span>1. Empleado</span>
+                        <span class="space-x-2">
+                            <button onclick="clearEmployeeList()" class="text-red-500 font-normal hover:underline text-[10px]">Vaciar</button>
+                            <button onclick="addEmployeePrompt()" class="text-emerald-600 font-normal hover:underline text-[10px]">+ Otro</button>
+                        </span>
+                    </label>
+                    <select id="selectEmpleado" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-gray-50 focus:ring-2 focus:ring-emerald-500 outline-none">
+                        <option value="">Seleccione empleado...</option>
+                    </select>
+                </div>
+
+                <!-- 2. PSQ -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">2. PSQ</label>
+                    <input type="text" id="inputPsq" placeholder="Ej. PSQ-001" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-gray-50 focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+
+                <!-- 3. Destino -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">3. Destino</label>
+                    <input type="text" id="inputDestino" placeholder="Ej. CEDIS Norte / Anden 3" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-gray-50 focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+            </div>
+
+            <!-- 4. Código de Cartón -->
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">4. Código de Cartón</label>
+                <div class="flex space-x-2">
+                    <input type="text" id="inputCarton" placeholder="Escribe o escanea el cartón" class="flex-1 border border-gray-300 rounded-lg p-2.5 text-sm bg-gray-50 focus:ring-2 focus:ring-emerald-500 outline-none">
+                    <button onclick="openCameraScanner('carton')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 rounded-lg shadow flex items-center justify-center transition">
+                        <i class="fa-solid fa-camera text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 5. Artículos Escaneados con Ráfaga en la misma fila -->
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1 flex justify-between">
+                    <span>5. Artículos Escaneados (<span id="artCount">0</span>)</span>
+                    <button onclick="clearArticulos()" class="text-red-500 text-[11px] hover:underline">Limpiar lista</button>
+                </label>
+                <div class="flex flex-row items-center gap-2 mb-2">
+                    <input type="text" id="inputArticuloUnico" placeholder="Escanear o ingresar artículo + Enter" class="flex-1 border border-gray-300 rounded-lg p-2.5 text-sm bg-gray-50 focus:ring-2 focus:ring-emerald-500 outline-none min-w-0" onkeypress="handleArticuloKeypress(event)">
+                    <button onclick="addArticuloManual()" class="bg-slate-700 hover:bg-slate-800 text-white px-3 py-2.5 rounded-lg text-xs font-medium shadow whitespace-nowrap">Agregar</button>
+                    <button onclick="openCameraScanner('articulos_burst')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2.5 rounded-lg text-xs font-medium shadow flex items-center space-x-1 whitespace-nowrap">
+                        <i class="fa-solid fa-camera-rotate"></i><span>Ráfaga</span>
+                    </button>
+                </div>
+                <!-- Lista detallada de artículos con sus cajas físicas -->
+                <div id="containerListaArticulos" class="space-y-1.5 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2 bg-gray-50 text-xs">
+                    <span class="text-gray-400 italic">No hay artículos agregados todavía...</span>
+                </div>
+            </div>
+
+            <!-- 6. Discrepancias General -->
+            <div class="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 space-y-3">
+                <label class="block text-xs font-bold text-emerald-800 uppercase">6. Gestión de Discrepancias</label>
+                <select id="selectTipoDiscrepancia" onchange="toggleDiscrepanciaPanel()" class="w-full border border-emerald-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                    <option value="Sin discrepancia">Sin discrepancia</option>
+                    <option value="Faltante">Faltante</option>
+                    <option value="Sobrante">Sobrante</option>
+                    <option value="Merma">Merma</option>
+                    <option value="Faltante y Sobrante">Faltante y Sobrante</option>
+                </select>
+
+                <!-- Dynamic Discrepancy Container -->
+                <div id="discrepancyContainer" class="hidden space-y-3 pt-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-semibold text-emerald-900">Listado de Errores / Discrepancias</span>
+                        <button onclick="addDiscrepancyRow()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-md shadow font-bold flex items-center space-x-1">
+                            <i class="fa-solid fa-plus"></i><span>Agregar Otro Código</span>
+                        </button>
+                    </div>
+                    <div id="discrepancyRowsList" class="space-y-2">
+                        <!-- Dynamic rows injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción Global -->
+            <div class="flex space-x-3 pt-2">
+                <button id="btnGuardarRegistro" onclick="guardarRegistro()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-md flex items-center justify-center space-x-2 transition">
+                    <i class="fa-solid fa-floppy-disk"></i><span id="btnGuardarText">Guardar Registro</span>
                 </button>
             </div>
-
-            <!-- Listado de Órdenes del Turno -->
-            <div class="bg-slate-800 rounded-xl shadow-sm border border-slate-700 p-5">
-                <h3 class="font-bold text-slate-200 text-sm mb-4 border-b border-slate-700 pb-2">Órdenes Registradas en el Turno (<span id="contador-ordenes">0</span>)</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-slate-300">
-                        <thead class="bg-slate-900 text-slate-400 uppercase border-b border-slate-700">
-                            <tr>
-                                <th class="p-3">OC</th>
-                                <th class="p-3">Empleado</th>
-                                <th class="p-3">Supervisor</th>
-                                <th class="p-3">Esperadas</th>
-                                <th class="p-3">Contadas</th>
-                                <th class="p-3">SKUs</th>
-                                <th class="p-3">Estado</th>
-                                <th class="p-3 text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-ordenes-body" class="divide-y divide-slate-700">
-                            <tr><td colspan="8" class="p-4 text-center text-slate-500">No hay órdenes registradas en este turno.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </section>
 
-        <!-- SECCIÓN 2: CAPTURA DE SKU Y TARIMAS PARA LA ORDEN ACTIVA -->
-        <section id="paso-2" class="hidden space-y-6">
-            <!-- Selector de Orden Activa -->
-            <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
-                <div class="flex items-center space-x-3">
-                    <i class="fa-solid fa-file-circle-check text-indigo-400 text-xl"></i>
-                    <div>
-                        <span class="text-xs font-semibold text-indigo-400 uppercase">Orden Seleccionada para Auditoría</span>
-                        <h3 class="text-base font-bold text-slate-100" id="info-orden-activa">Ninguna orden seleccionada</h3>
-                    </div>
-                </div>
-                <div class="flex gap-2">
-                    <button type="button" onclick="exportarPDFOrdenActiva()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm flex items-center">
-                        <i class="fa-solid fa-file-pdf mr-1"></i> PDF Orden
+        <!-- Registered Records Section -->
+        <section class="bg-white rounded-xl shadow-md p-5 space-y-3 border border-gray-100">
+            <div class="flex flex-wrap justify-between items-center border-b pb-2 gap-2">
+                <h3 class="font-bold text-gray-700 text-sm flex items-center">
+                    <i class="fa-solid fa-table text-emerald-600 mr-2"></i> Registros Capturados
+                </h3>
+                <div class="space-x-2 flex">
+                    <button onclick="vaciarTodosLosRegistrosPrompt()" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-lg shadow">
+                        <i class="fa-solid fa-trash-can mr-1"></i> Vaciar todos los registros
                     </button>
-                    <button type="button" onclick="cambiarPestana(1)" class="bg-slate-700 border border-slate-600 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-slate-600">
-                        Ver Órdenes
+                    <button onclick="copyTableToClipboard()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs px-3 py-1.5 rounded-lg shadow">
+                        <i class="fa-solid fa-copy mr-1"></i> Copiar Todo
                     </button>
                 </div>
             </div>
 
-            <!-- Registro de SKUs para la Orden Activa -->
-            <div class="bg-slate-800 rounded-xl shadow-sm border border-slate-700 p-5">
-                <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-4">
-                    <h2 class="text-lg font-bold text-slate-100 flex items-center">
-                        <i class="fa-solid fa-barcode text-indigo-400 mr-2"></i> SKUs de la Orden Activa
-                    </h2>
-                    <span id="badge-sku-count" class="text-xs bg-indigo-900 text-indigo-200 border border-indigo-700 font-semibold px-2.5 py-1 rounded-full">0 SKUs</span>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 bg-slate-900 p-3 rounded-lg border border-slate-700">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">Código SKU</label>
-                        <input type="text" id="sku-codigo-input" placeholder="Ej: 10024143" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">Cajas Esperadas (SKU)</label>
-                        <input type="number" id="sku-cajas-input" placeholder="Ej: 200" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
-                    <div class="flex items-end">
-                        <button type="button" onclick="agregarSKUOrdenActiva()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg text-sm transition flex items-center justify-center">
-                            <i class="fa-solid fa-plus mr-1.5"></i> Agregar SKU
-                        </button>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto mb-4">
-                    <table class="w-full text-left text-xs text-slate-300">
-                        <thead class="bg-slate-900 text-slate-400 uppercase border-b border-slate-700">
-                            <tr>
-                                <th class="p-2.5">SKU</th>
-                                <th class="p-2.5">Cajas Esperadas</th>
-                                <th class="p-2.5 text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-skus-orden-body" class="divide-y divide-slate-700">
-                            <tr><td colspan="3" class="p-4 text-center text-slate-500">Selecciona una orden y agrega SKUs.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Panel de Conteo Físico por Tarimas y Camas (SKU Seleccionado) -->
-            <div id="panel-conteo-sku" class="bg-slate-800 rounded-xl shadow-sm border border-slate-700 p-5 hidden space-y-4">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-700 pb-4 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">Seleccionar SKU a Contar:</label>
-                        <select id="sku-selector-conteo" onchange="seleccionarSKUConteo()" class="bg-slate-900 border border-slate-600 rounded-lg p-2 text-sm font-bold text-slate-100 focus:ring-2 focus:ring-indigo-500 min-w-[220px]">
-                        </select>
-                    </div>
-                    <div class="flex gap-2 text-center text-xs">
-                        <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700">
-                            <span class="block font-semibold text-slate-400">Esperadas</span>
-                            <span class="text-base font-bold text-slate-100" id="sku-activo-esperadas">0</span>
-                        </div>
-                        <div class="bg-indigo-950 p-2.5 rounded-lg border border-indigo-800">
-                            <span class="block font-semibold text-indigo-300">Contabilizadas</span>
-                            <span class="text-base font-bold text-indigo-200" id="sku-activo-auditadas">0</span>
-                        </div>
-                        <div class="bg-amber-950 p-2.5 rounded-lg border border-amber-800">
-                            <span class="block font-semibold text-amber-300">Diferencia</span>
-                            <span class="text-base font-bold text-amber-200" id="sku-activo-diferencia">0</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h3 class="font-bold text-slate-200 text-sm"><i class="fa-solid fa-layer-group text-indigo-400 mr-1.5"></i> Tarimas y Camas Registradas</h3>
-                        <button type="button" onclick="agregarTarimaOrdenActiva()" class="bg-slate-700 hover:bg-slate-600 text-indigo-300 font-semibold px-3 py-1.5 rounded-lg text-xs border border-slate-600 transition">
-                            <i class="fa-solid fa-plus mr-1"></i> Agregar Tarima
-                        </button>
-                    </div>
-
-                    <div id="tarimas-container" class="space-y-4"></div>
-                </div>
-
-                <div class="mt-6 pt-4 border-t border-slate-700 flex justify-between items-center flex-wrap gap-2">
-                    <button type="button" onclick="abrirModalDiscrepancia()" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-4 py-2 rounded-lg text-xs flex items-center shadow">
-                        <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Registrar Discrepancia / Merma
-                    </button>
-                    <div class="flex gap-2">
-                        <button type="button" onclick="cambiarPestana(3)" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold px-4 py-2 rounded-lg text-xs shadow">
-                            Ver Resumen General <i class="fa-solid fa-arrow-right ml-1"></i>
-                        </button>
-                        <button type="button" onclick="marcarOrdenConcluida()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs shadow">
-                            <i class="fa-solid fa-check-double mr-1.5"></i> Concluir Esta Orden
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- SECCIÓN 3: RESUMEN Y REPORTES CONSOLIDADOS DEL TURNO -->
-        <section id="paso-3" class="hidden space-y-6">
-            <div class="bg-slate-800 rounded-xl shadow-sm border border-slate-700 p-5">
-                <h2 class="text-lg font-bold text-slate-100 border-b border-slate-700 pb-2 mb-4 flex items-center">
-                    <i class="fa-solid fa-clipboard-check text-indigo-400 mr-2"></i> Resumen Consolidado del Turno
-                </h2>
-
-                <!-- Indicadores Generales Turno -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 text-center text-xs">
-                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-700">
-                        <span class="block font-semibold text-slate-400">Órdenes Revisadas</span>
-                        <span class="text-lg font-bold text-slate-100" id="ind-total-ordenes">0</span>
-                    </div>
-                    <div class="bg-indigo-950 p-3 rounded-lg border border-indigo-900">
-                        <span class="block font-semibold text-indigo-300">Cajas Solicitadas</span>
-                        <span class="text-lg font-bold text-indigo-100" id="ind-cajas-sol">0</span>
-                    </div>
-                    <div class="bg-emerald-950 p-3 rounded-lg border border-emerald-900">
-                        <span class="block font-semibold text-emerald-300">Cajas Contadas</span>
-                        <span class="text-lg font-bold text-emerald-100" id="ind-cajas-cont">0</span>
-                    </div>
-                    <div class="bg-amber-950 p-3 rounded-lg border border-amber-900">
-                        <span class="block font-semibold text-amber-300">Discrepancias Totales</span>
-                        <span class="text-lg font-bold text-amber-100" id="ind-disc-totales">0</span>
-                    </div>
-                </div>
-
-                <!-- Tabla Resumen Órdenes -->
-                <div class="overflow-x-auto mb-6">
-                    <table class="w-full text-left text-xs text-slate-300">
-                        <thead class="bg-slate-900 text-slate-400 uppercase border-b border-slate-700">
-                            <tr>
-                                <th class="p-3">OC</th>
-                                <th class="p-3">Empleado</th>
-                                <th class="p-3">Supervisor</th>
-                                <th class="p-3">Fecha/Hora</th>
-                                <th class="p-3">Esperadas</th>
-                                <th class="p-3">Contabilizadas</th>
-                                <th class="p-3">SKUs</th>
-                                <th class="p-3">Faltantes</th>
-                                <th class="p-3">Sobrantes</th>
-                                <th class="p-3">Mermas</th>
-                                <th class="p-3">Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-resumen-turno-body" class="divide-y divide-slate-700">
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Botones de Exportación Consolidada -->
-                <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 flex flex-wrap gap-3 justify-between items-center">
-                    <div class="flex flex-wrap gap-2">
-                        <button type="button" onclick="exportarExcelTurno()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3.5 py-2 rounded-lg text-xs shadow flex items-center">
-                            <i class="fa-solid fa-file-excel text-base mr-1.5"></i> Excel Turno (.xlsx)
-                        </button>
-                        <button type="button" onclick="exportarCSVTurno()" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-3.5 py-2 rounded-lg text-xs shadow flex items-center">
-                            <i class="fa-solid fa-file-csv text-base mr-1.5"></i> CSV Turno (.csv)
-                        </button>
-                        <button type="button" onclick="exportarPDFTurno()" class="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-3.5 py-2 rounded-lg text-xs shadow flex items-center">
-                            <i class="fa-solid fa-file-pdf text-base mr-1.5"></i> Reporte PDF Ejecutivo
-                        </button>
-                    </div>
-
-                    <button type="button" onclick="abrirModalCerrarTurno()" class="bg-slate-700 hover:bg-slate-600 text-slate-100 font-bold px-5 py-2.5 rounded-lg text-sm shadow border border-slate-600">
-                        Cerrar Turno Actual
-                    </button>
-                </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-700 border-b">
+                            <th class="p-2">#</th>
+                            <th class="p-2">Fecha / Hora</th>
+                            <th class="p-2">Emp.</th>
+                            <th class="p-2">PSQ</th>
+                            <th class="p-2">Destino</th>
+                            <th class="p-2">Cartón</th>
+                            <th class="p-2">Arts. & Cajas</th>
+                            <th class="p-2">Discrepancias Detalle</th>
+                            <th class="p-2 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBodyRecords" class="divide-y divide-gray-100">
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-gray-400">No hay registros guardados todavía</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </section>
 
     </main>
 
-    <!-- MODAL: AGREGAR NUEVA ORDEN DE COMPRA -->
-    <div id="modal-nueva-orden" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl text-slate-100">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-                <h3 class="font-bold text-slate-100 text-base flex items-center">
-                    <i class="fa-solid fa-file-circle-plus text-emerald-400 mr-2"></i> Registrar Nueva Orden de Compra
-                </h3>
-                <button type="button" onclick="cerrarModalNuevaOrden()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-
-            <div class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Orden de Compra (OC)</label>
-                    <input type="text" id="modal-oc-input" placeholder="Ej: OC-4405356" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Número de Empleado</label>
-                    <input type="text" id="modal-empleado-input" placeholder="Ej: 189703" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Supervisor a Cargo</label>
-                    <input type="text" id="modal-supervisor-input" placeholder="Ej: Juan Pérez Gómez" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Total Cajas Solicitadas en la Orden</label>
-                    <input type="number" id="modal-cajas-input" placeholder="Ej: 1000" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-            </div>
-
-            <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
-                <button type="button" onclick="cerrarModalNuevaOrden()" class="px-3 py-1.5 rounded-lg border border-slate-600 text-xs hover:bg-slate-700 text-slate-300">Cancelar</button>
-                <button type="button" onclick="guardarNuevaOrden()" class="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700">Guardar e Iniciar Auditoría</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL DE DISCREPANCIAS (SIN CAMPOS DE TARIMA Y CAMA) -->
-    <div id="modal-discrepancia" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl text-slate-100">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-                <h3 class="font-bold text-slate-100 text-base flex items-center">
-                    <i class="fa-solid fa-triangle-exclamation text-amber-400 mr-2"></i> Registrar Discrepancia / Merma
-                </h3>
-                <button type="button" onclick="cerrarModalDiscrepancia()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-
-            <div class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Tipo de Discrepancia</label>
-                    <select id="disc-tipo" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
-                        <option value="Faltante">Faltante</option>
-                        <option value="Sobrante">Sobrante</option>
-                        <option value="Merma">Merma (Caja dañada/recibida)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Cantidad de Cajas Involucradas</label>
-                    <input type="number" id="disc-cantidad" placeholder="Ej: 5" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Descripción u Observaciones</label>
-                    <textarea id="disc-obs" rows="3" placeholder="Detalla el motivo..." class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
-                </div>
-            </div>
-
-            <div class="flex justify-end gap-2 pt-2 border-t border-slate-700">
-                <button type="button" onclick="cerrarModalDiscrepancia()" class="px-3 py-1.5 rounded-lg border border-slate-600 text-xs hover:bg-slate-700 text-slate-300">Cancelar</button>
-                <button type="button" onclick="guardarDiscrepancia()" class="px-4 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700">Guardar Discrepancia</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: CERRAR TURNO -->
-    <div id="modal-cerrar-turno" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl text-slate-100">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-                <h3 class="font-bold text-slate-100 text-base flex items-center">
-                    <i class="fa-solid fa-triangle-exclamation text-amber-400 mr-2"></i> Confirmar Cierre de Turno
-                </h3>
-                <button type="button" onclick="cerrarModalCerrarTurno()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <p class="text-xs text-slate-300">Al cerrar el turno actual, se archivarán las órdenes en el historial, se limpiará el espacio para iniciar una nueva jornada y se guardarán los registros. ¿Deseas descargar el reporte general antes de continuar?</p>
-            <div class="flex flex-col gap-2 pt-2 border-t border-slate-700">
-                <button type="button" onclick="exportarPDFTurno()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2 rounded-lg text-xs flex items-center justify-center shadow">
-                    <i class="fa-solid fa-file-pdf mr-1.5"></i> Descargar Reporte PDF del Turno y Cerrar
+    <!-- Camera Modal -->
+    <div id="cameraModal" class="fixed inset-0 bg-black/80 z-50 hidden flex flex-col justify-between p-4">
+        <div class="flex justify-between items-center text-white">
+            <h3 id="cameraModalTitle" class="font-bold text-base">Escaneando código...</h3>
+            <div class="space-x-2">
+                <button onclick="reiniciarCamaraScanner()" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold" title="Reiniciar si se congela">
+                    <i class="fa-solid fa-rotate-right mr-1"></i> Reiniciar
                 </button>
-                <button type="button" onclick="confirmarCierreTurnoSinDescarga()" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2 rounded-lg text-xs shadow border border-slate-600">
-                    Cerrar Turno sin Descargar
+                <button onclick="closeCameraScanner()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm font-bold">
+                    <i class="fa-solid fa-xmark mr-1"></i> Cerrar
+                </button>
+            </div>
+        </div>
+
+        <div class="relative w-full max-w-md mx-auto aspect-square bg-black rounded-xl overflow-hidden shadow-2xl flex items-center justify-center border-2 border-emerald-500">
+            <video id="cameraVideo" autoplay playsinline webkit-playsinline muted class="w-full h-full object-cover"></video>
+            <!-- Canvas oculto para procesamiento de fotogramas optimizado -->
+            <canvas id="hiddenCanvas" class="hidden"></canvas>
+            <div id="cameraLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/90 text-white p-4 text-center">
+                <i class="fa-solid fa-spinner fa-spin text-3xl text-emerald-400 mb-2"></i>
+                <p class="text-sm">Iniciando cámara y enfoque...</p>
+            </div>
+            <div class="absolute inset-16 border-2 border-dashed border-emerald-400/60 rounded-lg pointer-events-none"></div>
+        </div>
+
+        <div class="max-w-md mx-auto w-full text-center space-y-2">
+            <p id="cameraStatusText" class="text-xs text-gray-300">Apunta la cámara hacia el código o usa la entrada manual abajo.</p>
+            <div class="flex space-x-2">
+                <input type="text" id="manualCameraFallback" placeholder="Ingresar código manualmente..." class="flex-1 p-2 text-xs rounded-lg border border-gray-300 text-gray-800">
+                <button onclick="submitManualCameraFallback()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold">Usar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
+            <h3 class="font-bold text-gray-800 text-base border-b pb-2 flex justify-between items-center">
+                <span>Exportar Datos (Excel / CSV)</span>
+                <button onclick="closeExportModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+            </h3>
+            <textarea id="exportTextarea" rows="6" readonly class="w-full border rounded-lg p-2 text-xs bg-gray-50 font-mono"></textarea>
+            <div class="flex space-x-2">
+                <button onclick="copyExportText()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg text-xs font-bold shadow">
+                    <i class="fa-solid fa-copy mr-1"></i> Copiar al Portapapeles
+                </button>
+                <button onclick="downloadCSVFile()" class="bg-slate-700 hover:bg-slate-800 text-white py-2 px-4 rounded-lg text-xs font-bold shadow">
+                    Descargar .CSV
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- JavaScript Logic -->
     <script>
-        // ESTADO GLOBAL DEL TURNO Y HISTORIAL
-        let turnoData = {
-            idTurno: 'TURNO-' + new Date().toISOString().slice(0,10) + '-' + Math.floor(Math.random()*1000),
-            fechaInicio: new Date().toLocaleString(),
-            ordenes: [] 
+        let registros = [];
+        let listaArticulosDetalle = []; // Almacena objetos { codigo, cajas }
+        let discrepancyRowsData = [];
+        let activeCameraTarget = null;
+        let mediaStream = null;
+        let scanInterval = null;
+        let lastScannedCode = "";
+        let lastScannedTime = 0;
+        let editingRecordId = null; // ID del registro en edición, null si es nuevo
+
+        window.onload = function() {
+            const saved = localStorage.getItem('auditoria_cartones_data');
+            if (saved) {
+                try { registros = JSON.parse(saved); } catch(e) { registros = []; }
+            }
+            renderTable();
         };
 
-        let ordenActivaId = null;
-        let skuActivoCodigo = null;
-        let historialTurnos = [];
-
-        document.addEventListener("DOMContentLoaded", function() {
-            const savedTurno = localStorage.getItem('turnoData_activo');
-            const savedHistorial = localStorage.getItem('historial_turnos');
-            if(savedTurno) {
-                try { turnoData = JSON.parse(savedTurno); } catch(e){}
-            }
-            if(savedHistorial) {
-                try { historialTurnos = JSON.parse(savedHistorial); } catch(e){}
-            }
-            actualizarTablaOrdenes();
-        });
-
-        function guardarTurnoLocal() {
-            localStorage.setItem('turnoData_activo', JSON.stringify(turnoData));
-            localStorage.setItem('historial_turnos', JSON.stringify(historialTurnos));
+        function saveToStorage() {
+            localStorage.setItem('auditoria_cartones_data', JSON.stringify(registros));
+            renderTable();
         }
 
-        function cambiarPestana(paso) {
-            [1, 2, 3].forEach(p => {
-                const sec = document.getElementById(`paso-${p}`);
-                const btn = document.getElementById(`step-btn-${p}`);
-                if(sec) sec.classList.add('hidden');
-                if(btn) btn.className = "flex-1 py-2 px-3 rounded-lg text-center text-slate-400 hover:bg-slate-700 transition";
-            });
-            const targetSec = document.getElementById(`paso-${paso}`);
-            const targetBtn = document.getElementById(`step-btn-${paso}`);
-            if(targetSec) targetSec.classList.remove('hidden');
-            if(targetBtn) targetBtn.className = "flex-1 py-2 px-3 rounded-lg text-center bg-indigo-950 text-indigo-300 font-bold border border-indigo-700 transition";
-
-            if(paso === 2) {
-                if(!ordenActivaId && turnoData.ordenes.length > 0) {
-                    ordenActivaId = turnoData.ordenes[0].id;
+        // Empleado management
+        function addEmployeePrompt() {
+            Swal.fire({
+                title: 'Nuevo Empleado',
+                input: 'text',
+                inputPlaceholder: 'Número de empleado',
+                showCancelButton: true,
+                confirmButtonText: 'Agregar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.value) {
+                    const select = document.getElementById('selectEmpleado');
+                    const opt = document.createElement('option');
+                    opt.value = result.value;
+                    opt.textContent = result.value;
+                    select.appendChild(opt);
+                    select.value = result.value;
                 }
-                actualizarVistaOrdenActiva();
-            }
-            if(paso === 3) {
-                renderizarResumenTurno();
-            }
-            window.scrollTo(0,0);
-        }
-
-        // GESTIÓN DE MODAL NUEVA ORDEN
-        function abrirModalNuevaOrden() {
-            document.getElementById('modal-oc-input').value = '';
-            document.getElementById('modal-empleado-input').value = '';
-            document.getElementById('modal-supervisor-input').value = '';
-            document.getElementById('modal-cajas-input').value = '';
-            document.getElementById('modal-nueva-orden').classList.remove('hidden');
-        }
-
-        function cerrarModalNuevaOrden() {
-            document.getElementById('modal-nueva-orden').classList.add('hidden');
-        }
-
-        function guardarNuevaOrden() {
-            const oc = document.getElementById('modal-oc-input').value.trim();
-            const empleado = document.getElementById('modal-empleado-input').value.trim();
-            const supervisor = document.getElementById('modal-supervisor-input').value.trim();
-            const totalEsperado = parseInt(document.getElementById('modal-cajas-input').value) || 0;
-
-            if(!oc || !empleado || !supervisor || totalEsperado <= 0) {
-                alert('Por favor completa todos los campos (incluyendo el supervisor) con valores válidos.');
-                return;
-            }
-
-            if(turnoData.ordenes.find(o => o.oc === oc)) {
-                alert('¡Advertencia! Ya existe una orden registrada con este mismo número de OC en el turno actual.');
-                return;
-            }
-
-            const nuevaOrden = {
-                id: 'OC-' + Date.now(),
-                oc: oc,
-                empleado: empleado,
-                supervisor: supervisor,
-                totalEsperado: totalEsperado,
-                horaInicio: new Date().toLocaleTimeString(),
-                horaFin: '',
-                skus: [],
-                estado: 'En Proceso'
-            };
-
-            turnoData.ordenes.push(nuevaOrden);
-            guardarTurnoLocal();
-            cerrarModalNuevaOrden();
-
-            ordenActivaId = nuevaOrden.id;
-            actualizarTablaOrdenes();
-            cambiarPestana(2);
-        }
-
-        function actualizarTablaOrdenes() {
-            const tbody = document.getElementById('tabla-ordenes-body');
-            const contador = document.getElementById('contador-ordenes');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            if(contador) contador.innerText = turnoData.ordenes.length;
-
-            if(turnoData.ordenes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">No hay órdenes registradas en este turno.</td></tr>';
-                return;
-            }
-
-            turnoData.ordenes.forEach(o => {
-                let totalContado = 0;
-                o.skus.forEach(s => totalContado += s.auditadas);
-
-                let badgeEstado = '<span class="bg-amber-950 text-amber-300 border border-amber-800 font-semibold px-2 py-0.5 rounded text-2xs">En Proceso</span>';
-                if(o.estado === 'Finalizado sin diferencias') badgeEstado = '<span class="bg-emerald-950 text-emerald-300 border border-emerald-800 font-semibold px-2 py-0.5 rounded text-2xs">Sin Diferencias</span>';
-                if(o.estado === 'Finalizado con discrepancias') badgeEstado = '<span class="bg-indigo-950 text-indigo-300 border border-indigo-800 font-semibold px-2 py-0.5 rounded text-2xs">Con Discrepancias</span>';
-
-                const tr = document.createElement('tr');
-                tr.className = "border-t border-slate-700 hover:bg-slate-750";
-                tr.innerHTML = `
-                    <td class="p-3 font-bold text-slate-100">${o.oc}</td>
-                    <td class="p-3 text-slate-300">${o.empleado}</td>
-                    <td class="p-3 text-slate-300">${o.supervisor || 'N/A'}</td>
-                    <td class="p-3 text-slate-300">${o.totalEsperado}</td>
-                    <td class="p-3 font-semibold text-slate-100">${totalContado}</td>
-                    <td class="p-3 text-slate-300">${o.skus.length} SKUs</td>
-                    <td class="p-3">${badgeEstado}</td>
-                    <td class="p-3 text-center space-x-2">
-                        <button type="button" onclick="seleccionarOrden('${o.id}')" class="bg-indigo-600 text-white px-2.5 py-1 rounded text-xs hover:bg-indigo-700">Auditar</button>
-                        <button type="button" onclick="eliminarOrden('${o.id}')" class="text-rose-400 hover:text-rose-300 px-1"><i class="fa-solid fa-trash-can"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
             });
         }
 
-        function seleccionarOrden(id) {
-            ordenActivaId = id;
-            cambiarPestana(2);
+        function clearEmployeeList() {
+            const select = document.getElementById('selectEmpleado');
+            select.innerHTML = '<option value="">Seleccione empleado...</option>';
         }
 
-        function eliminarOrden(id) {
-            if(confirm('¿Estás seguro de eliminar esta orden del turno?')) {
-                turnoData.ordenes = turnoData.ordenes.filter(o => o.id !== id);
-                if(ordenActivaId === id) ordenActivaId = null;
-                guardarTurnoLocal();
-                actualizarTablaOrdenes();
+        // Artículos manejo con flujo de cajas físicas obligatorio y sin herencia
+        function handleArticuloKeypress(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                addArticuloManual();
             }
         }
 
-        function obtenerOrdenActiva() {
-            return turnoData.ordenes.find(o => o.id === ordenActivaId);
+        function addArticuloManual() {
+            const val = document.getElementById('inputArticuloUnico').value.trim();
+            if (val) {
+                document.getElementById('inputArticuloUnico').value = '';
+                solicitarCantidadCajasParaArticulo(val);
+            }
         }
 
-        function actualizarVistaOrdenActiva() {
-            const orden = obtenerOrdenActiva();
-            const infoOrden = document.getElementById('info-orden-activa');
-            if(!orden) {
-                if(infoOrden) infoOrden.innerText = 'Selecciona una orden en la pestaña 1';
-                document.getElementById('panel-conteo-sku').classList.add('hidden');
-                return;
-            }
-            if(infoOrden) infoOrden.innerText = `OC: ${orden.oc} | Auditor: ${orden.empleado} | Supervisor: ${orden.supervisor || 'N/A'} (Esp: ${orden.totalEsperado} cajas)`;
-            actualizarListaSKUsOrdenActiva();
-        }
-
-        // GESTIÓN DE SKUs DE LA ORDEN ACTIVA
-        function agregarSKUOrdenActiva() {
-            const orden = obtenerOrdenActiva();
-            if(!orden) {
-                alert('Selecciona o crea una orden activa primero.');
-                cambiarPestana(1);
-                return;
-            }
-
-            const codigoInput = document.getElementById('sku-codigo-input');
-            const cajasInput = document.getElementById('sku-cajas-input');
-            const codigo = codigoInput.value.trim();
-            const cajas = parseInt(cajasInput.value);
-
-            if(!codigo || isNaN(cajas) || cajas <= 0) {
-                alert('Ingresa un SKU válido y cajas esperadas.');
-                return;
-            }
-
-            if(orden.skus.find(s => s.codigo === codigo)) {
-                alert('Este SKU ya está registrado en esta orden.');
-                return;
-            }
-
-            orden.skus.push({
-                codigo: codigo,
-                esperadas: cajas,
-                auditadas: 0,
-                tarimas: [],
-                discrepancias: [],
-                finalizado: false
+        function solicitarCantidadCajasParaArticulo(codigoArticulo) {
+            Swal.fire({
+                title: 'Cantidad de Cajas Físicas',
+                html: `<p class="text-sm text-gray-600 mb-2">Artículo detectado:</p>
+                       <p class="font-mono font-bold text-emerald-700 text-lg mb-3">${codigoArticulo}</p>
+                       <p class="text-xs text-gray-500 mb-1">Escribe la cantidad de cajas físicas</p>`,
+                input: 'number',
+                inputAttributes: {
+                    min: 1,
+                    step: 1,
+                    placeholder: 'Escribe cantidad de cajas...'
+                },
+                inputValue: '',
+                showCancelButton: true,
+                confirmButtonText: 'Confirmar',
+                cancelButtonText: 'Cancelar',
+                allowOutsideClick: false,
+                inputValidator: (value) => {
+                    if (!value || parseInt(value) <= 0) {
+                        return 'Debes ingresar una cantidad válida de cajas mayores a 0';
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed && result.value) {
+                    const cantidadCajas = parseInt(result.value);
+                    listaArticulosDetalle.push({ codigo: codigoArticulo, cajas: cantidadCajas });
+                    updateArticulosView();
+                }
             });
-
-            codigoInput.value = '';
-            cajasInput.value = '';
-            guardarTurnoLocal();
-            actualizarListaSKUsOrdenActiva();
         }
 
-        function eliminarSKUOrdenActiva(codigo) {
-            const orden = obtenerOrdenActiva();
-            if(!orden) return;
-            orden.skus = orden.skus.filter(s => s.codigo !== codigo);
-            guardarTurnoLocal();
-            actualizarListaSKUsOrdenActiva();
+        function removeArticuloDetalle(index) {
+            listaArticulosDetalle.splice(index, 1);
+            updateArticulosView();
         }
 
-        function actualizarListaSKUsOrdenActiva() {
-            const orden = obtenerOrdenActiva();
-            const tbody = document.getElementById('tabla-skus-orden-body');
-            const badge = document.getElementById('badge-sku-count');
-            if(!tbody || !orden) return;
-            tbody.innerHTML = '';
-            if(badge) badge.innerText = `${orden.skus.length} SKUs`;
-
-            if(orden.skus.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-slate-500">No hay SKUs en esta orden.</td></tr>';
-                document.getElementById('panel-conteo-sku').classList.add('hidden');
-                return;
-            }
-
-            orden.skus.forEach(s => {
-                const tr = document.createElement('tr');
-                tr.className = "border-t border-slate-700";
-                tr.innerHTML = `
-                    <td class="p-2.5 font-bold text-slate-100">${s.codigo}</td>
-                    <td class="p-2.5 text-slate-300">${s.esperadas} cajas</td>
-                    <td class="p-2.5 text-center space-x-2">
-                        <button type="button" onclick="seleccionarSKUConteoDirecto('${s.codigo}')" class="bg-indigo-900 text-indigo-200 border border-indigo-700 font-semibold px-2 py-1 rounded text-xs hover:bg-indigo-800">Tarimas</button>
-                        <button type="button" onclick="eliminarSKUOrdenActiva('${s.codigo}')" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash-can"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            poblarSelectorSKUConteo();
+        function clearArticulos() {
+            listaArticulosDetalle = [];
+            updateArticulosView();
         }
 
-        function poblarSelectorSKUConteo() {
-            const orden = obtenerOrdenActiva();
-            const select = document.getElementById('sku-selector-conteo');
-            if(!select || !orden) return;
-            select.innerHTML = '';
-            orden.skus.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.codigo;
-                opt.innerText = `SKU: ${s.codigo} (${s.esperadas} esp)`;
-                if(s.codigo === skuActivoCodigo) opt.selected = true;
-                select.appendChild(opt);
-            });
-            if(orden.skus.length > 0 && !skuActivoCodigo) {
-                skuActivoCodigo = orden.skus[0].codigo;
-            }
-            seleccionarSKUConteo();
-        }
-
-        function seleccionarSKUConteoDirecto(codigo) {
-            skuActivoCodigo = codigo;
-            const select = document.getElementById('sku-selector-conteo');
-            if(select) select.value = codigo;
-            seleccionarSKUConteo();
-        }
-
-        function seleccionarSKUConteo() {
-            const orden = obtenerOrdenActiva();
-            const select = document.getElementById('sku-selector-conteo');
-            if(!select || !orden) return;
-            skuActivoCodigo = select.value;
-            const sku = orden.skus.find(s => s.codigo === skuActivoCodigo);
-
-            if(!sku) return;
-
-            document.getElementById('panel-conteo-sku').classList.remove('hidden');
-            const espElem = document.getElementById('sku-activo-esperadas');
-            if(espElem) espElem.innerText = sku.esperadas;
-
-            renderizarTarimasSKU(sku);
-        }
-
-        function renderizarTarimasSKU(sku) {
-            let totalAuditado = 0;
-            sku.tarimas.forEach(t => {
-                t.camas.forEach(c => totalAuditado += (c.cantidad || 0));
-            });
-            sku.auditadas = totalAuditado;
-
-            const audElem = document.getElementById('sku-activo-auditadas');
-            const diffElem = document.getElementById('sku-activo-diferencia');
-            if(audElem) audElem.innerText = totalAuditado;
+        function updateArticulosView() {
+            document.getElementById('artCount').textContent = listaArticulosDetalle.length;
+            const container = document.getElementById('containerListaArticulos');
             
-            const diff = totalAuditado - sku.esperadas;
-            if(diffElem) diffElem.innerText = (diff > 0 ? `+${diff}` : diff);
+            if (listaArticulosDetalle.length === 0) {
+                container.innerHTML = `<span class="text-gray-400 italic">No hay artículos agregados todavía...</span>`;
+                return;
+            }
 
-            const container = document.getElementById('tarimas-container');
-            if(!container) return;
             container.innerHTML = '';
-
-            if(sku.tarimas.length === 0) {
-                container.innerHTML = '<div class="text-xs text-slate-400 p-3 bg-slate-900 rounded-lg text-center border border-slate-700">No hay tarimas. Presiona "Agregar Tarima".</div>';
-                return;
-            }
-
-            sku.tarimas.forEach((tarima, tIdx) => {
-                let totalTarima = 0;
-                tarima.camas.forEach(c => totalTarima += (c.cantidad || 0));
-
-                const tDiv = document.createElement('div');
-                tDiv.className = "bg-slate-900 border border-slate-700 rounded-lg p-4 space-y-3";
-
-                let camasHTML = '';
-                tarima.camas.forEach((cama, cIdx) => {
-                    camasHTML += `
-                        <div class="flex items-center space-x-2">
-                            <span class="text-xs font-semibold text-slate-400 w-16">Cama ${cIdx + 1}:</span>
-                            <input type="number" value="${cama.cantidad}" oninput="actualizarCantidadCamaDirecto('${sku.codigo}', ${tIdx}, ${cIdx}, this.value)" class="w-24 bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-center text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
-                            <span class="text-xs text-slate-400">cajas</span>
-                            <button type="button" onclick="eliminarCama('${sku.codigo}', ${tIdx}, ${cIdx})" class="text-rose-400 hover:text-rose-300 text-xs px-2"><i class="fa-solid fa-minus-circle"></i></button>
-                        </div>
-                    `;
-                });
-
-                tDiv.innerHTML = `
-                    <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-                        <span class="font-bold text-slate-200 text-xs">Tarima ${tIdx + 1} (Total: ${totalTarima} cajas)</span>
-                        <div class="space-x-2">
-                            <button type="button" onclick="agregarCama('${sku.codigo}', ${tIdx})" class="text-xs bg-indigo-900 text-indigo-200 border border-indigo-700 font-semibold px-2 py-1 rounded hover:bg-indigo-800">+ Cama</button>
-                            <button type="button" onclick="eliminarTarima('${sku.codigo}', ${tIdx})" class="text-xs bg-rose-950 text-rose-300 border border-rose-800 font-semibold px-2 py-1 rounded hover:bg-rose-900">Borrar Tarima</button>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                        ${camasHTML || '<span class="text-xs text-slate-500">Sin camas.</span>'}
-                    </div>
+            listaArticulosDetalle.forEach((item, idx) => {
+                const row = document.createElement('div');
+                row.className = 'flex justify-between items-center bg-white p-1.5 rounded border border-gray-200 shadow-sm';
+                row.innerHTML = `
+                    <span class="font-mono font-bold text-emerald-800">${item.codigo}</span>
+                    <span class="text-gray-600 bg-gray-100 px-2 py-0.5 rounded">Cajas: <strong class="text-gray-800">${item.cajas}</strong></span>
+                    <button onclick="removeArticuloDetalle(${idx})" class="text-red-500 hover:text-red-700 px-1"><i class="fa-solid fa-xmark"></i></button>
                 `;
-                container.appendChild(tDiv);
+                container.appendChild(row);
             });
-            guardarTurnoLocal();
         }
 
-        function agregarTarimaOrdenActiva() {
-            const sku = obtenerOrdenActiva().skus.find(s => s.codigo === skuActivoCodigo);
-            if(!sku) return;
-            sku.tarimas.push({ id: sku.tarimas.length + 1, camas: [{ id: 1, cantidad: 0 }] });
-            renderizarTarimasSKU(sku);
-        }
-
-        function eliminarTarima(skuCodigo, tIdx) {
-            const sku = obtenerOrdenActiva().skus.find(s => s.codigo === skuCodigo);
-            if(!sku) return;
-            sku.tarimas.splice(tIdx, 1);
-            renderizarTarimasSKU(sku);
-        }
-
-        function agregarCama(skuCodigo, tIdx) {
-            const sku = obtenerOrdenActiva().skus.find(s => s.codigo === skuCodigo);
-            if(!sku) return;
-            sku.tarimas[tIdx].camas.push({ id: sku.tarimas[tIdx].camas.length + 1, cantidad: 0 });
-            renderizarTarimasSKU(sku);
-        }
-
-        function eliminarCama(skuCodigo, tIdx, cIdx) {
-            const sku = obtenerOrdenActiva().skus.find(s => s.codigo === skuCodigo);
-            if(!sku) return;
-            sku.tarimas[tIdx].camas.splice(cIdx, 1);
-            renderizarTarimasSKU(sku);
-        }
-
-        function actualizarCantidadCamaDirecto(skuCodigo, tIdx, cIdx, valor) {
-            const sku = obtenerOrdenActiva().skus.find(s => s.codigo === skuCodigo);
-            if(!sku) return;
-            sku.tarimas[tIdx].camas[cIdx].cantidad = parseInt(valor) || 0;
-            
-            let totalAuditado = 0;
-            sku.tarimas.forEach(t => {
-                t.camas.forEach(c => totalAuditado += (c.cantidad || 0));
-            });
-            sku.auditadas = totalAuditado;
-
-            const audElem = document.getElementById('sku-activo-auditadas');
-            const diffElem = document.getElementById('sku-activo-diferencia');
-            if(audElem) audElem.innerText = totalAuditado;
-            const diff = totalAuditado - sku.esperadas;
-            if(diffElem) diffElem.innerText = (diff > 0 ? `+${diff}` : diff);
-            guardarTurnoLocal();
-        }
-
-        function marcarOrdenConcluida() {
-            const orden = obtenerOrdenActiva();
-            if(!orden) return;
-            
-            let hayDiff = false;
-            orden.skus.forEach(s => {
-                if(s.auditadas !== s.esperadas || s.discrepancias.length > 0) hayDiff = true;
-            });
-
-            orden.estado = hayDiff ? 'Finalizado con discrepancias' : 'Finalizado sin diferencias';
-            orden.horaFin = new Date().toLocaleTimeString();
-            guardarTurnoLocal();
-            actualizarTablaOrdenes();
-            alert(`Orden ${orden.oc} concluida y guardada.`);
-            cambiarPestana(3);
-        }
-
-        // DISCREPANCIAS
-        function abrirModalDiscrepancia() {
-            document.getElementById('disc-tipo').value = 'Faltante';
-            document.getElementById('disc-cantidad').value = '';
-            document.getElementById('disc-obs').value = '';
-            document.getElementById('modal-discrepancia').classList.remove('hidden');
-        }
-
-        function cerrarModalDiscrepancia() {
-            document.getElementById('modal-discrepancia').classList.add('hidden');
-        }
-
-        function guardarDiscrepancia() {
-            const orden = obtenerOrdenActiva();
-            if(!orden) return;
-            const sku = orden.skus.find(s => s.codigo === skuActivoCodigo);
-            if(!sku) { alert('Selecciona un SKU activo.'); return; }
-
-            const tipo = document.getElementById('disc-tipo').value;
-            const cantidad = parseInt(document.getElementById('disc-cantidad').value) || 0;
-            const obs = document.getElementById('disc-obs').value.trim();
-
-            if(cantidad <= 0) { alert('Ingresa cantidad válida.'); return; }
-
-            sku.discrepancias.push({
-                tipo, cantidad, obs, empleado: orden.empleado, fechaHora: new Date().toLocaleString()
-            });
-
-            cerrarModalDiscrepancia();
-            guardarTurnoLocal();
-            alert('Discrepancia guardada correctamente.');
-        }
-
-        // RESUMEN Y CONSOLIDADOS TURNO
-        function renderizarResumenTurno() {
-            const tbody = document.getElementById('tabla-resumen-turno-body');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-
-            let totalOrd = turnoData.ordenes.length;
-            let totalSolG = 0, totalContG = 0, totalDiscG = 0;
-
-            if(totalOrd === 0) {
-                tbody.innerHTML = '<tr><td colspan="11" class="p-4 text-center text-slate-500">No hay órdenes registradas.</td></tr>';
-                document.getElementById('ind-total-ordenes').innerText = '0';
-                document.getElementById('ind-cajas-sol').innerText = '0';
-                document.getElementById('ind-cajas-cont').innerText = '0';
-                document.getElementById('ind-disc-totales').innerText = '0';
-                return;
-            }
-
-            turnoData.ordenes.forEach(o => {
-                let espO = o.totalEsperado;
-                let contO = 0;
-                let skusO = o.skus.length;
-                let faltO = 0, sobO = 0, merO = 0;
-
-                o.skus.forEach(s => {
-                    contO += s.auditadas;
-                    let diff = s.auditadas - s.esperadas;
-                    if(diff < 0) faltO += Math.abs(diff);
-                    if(diff > 0) sobO += diff;
-                    s.discrepancias.forEach(d => { if(d.tipo === 'Merma') merO += d.cantidad; });
-                });
-
-                totalSolG += espO;
-                totalContG += contO;
-                totalDiscG += (faltO + sobO + merO);
-
-                let badgeEstado = '<span class="bg-amber-950 text-amber-300 border border-amber-800 font-semibold px-2 py-0.5 rounded text-2xs">En Proceso</span>';
-                if(o.estado.includes('sin')) badgeEstado = '<span class="bg-emerald-950 text-emerald-300 border border-emerald-800 font-semibold px-2 py-0.5 rounded text-2xs">Sin Diferencias</span>';
-                if(o.estado.includes('con')) badgeEstado = '<span class="bg-indigo-950 text-indigo-300 border border-indigo-800 font-semibold px-2 py-0.5 rounded text-2xs">Con Discrepancia</span>';
-
-                const tr = document.createElement('tr');
-                tr.className = "border-t border-slate-700 hover:bg-slate-750";
-                tr.innerHTML = `
-                    <td class="p-3 font-bold text-slate-100">${o.oc}</td>
-                    <td class="p-3 text-slate-300">${o.empleado}</td>
-                    <td class="p-3 text-slate-300">${o.supervisor || 'N/A'}</td>
-                    <td class="p-3 text-slate-300">${o.horaInicio}</td>
-                    <td class="p-3 text-slate-300">${espO}</td>
-                    <td class="p-3 font-bold text-slate-100">${contO}</td>
-                    <td class="p-3 text-slate-300">${skusO}</td>
-                    <td class="p-3 text-rose-400 font-bold">${faltO}</td>
-                    <td class="p-3 text-indigo-400 font-bold">${sobO}</td>
-                    <td class="p-3 text-amber-400 font-bold">${merO}</td>
-                    <td class="p-3">${badgeEstado}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            document.getElementById('ind-total-ordenes').innerText = totalOrd;
-            document.getElementById('ind-cajas-sol').innerText = totalSolG;
-            document.getElementById('ind-cajas-cont').innerText = totalContG;
-            document.getElementById('ind-disc-totales').innerText = totalDiscG;
-        }
-
-        // EXPORTAR EXCEL CONSOLIDADO
-        function exportarExcelTurno() {
-            if(typeof XLSX === 'undefined') { alert('XLSX no disponible.'); return; }
-            const wb = XLSX.utils.book_new();
-
-            let turnoResumen = [
-                ["REPORTE GENERAL DEL TURNO"],
-                ["Total Órdenes", turnoData.ordenes.length],
-                [],
-                ["OC", "Empleado", "Supervisor", "Esperadas", "Contabilizadas", "Estado"]
-            ];
-            turnoData.ordenes.forEach(o => {
-                let c = 0; o.skus.forEach(s=>c+=s.auditadas);
-                turnoResumen.push([o.oc, o.empleado, o.supervisor || 'N/A', o.totalEsperado, c, o.estado]);
-            });
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(turnoResumen), "Resumen Turno");
-
-            XLSX.writeFile(wb, `Reporte_Turno_${new Date().toISOString().slice(0,10)}.xlsx`);
-        }
-
-        // EXPORTAR CSV TABULAR UNIFICADO
-        function exportarCSVTurno() {
-            let csvLines = [];
-            csvLines.push("ORDEN_COMPRA,EMPLEADO,SUPERVISOR,HORA_INICIO,HORA_FIN,ESTADO_ORDEN,SKU,CAJAS_ESPERADAS_SKU,CAJAS_CONTABILIZADAS_SKU,DIFERENCIA_SKU,TARIMA,CAMA,CAJAS_CAMA,DISCREPANCIA_TIPO,DISCREPANCIA_CANTIDAD,DISCREPANCIA_OBS");
-
-            turnoData.ordenes.forEach(o => {
-                if(o.skus.length === 0) {
-                    csvLines.push(`${o.oc},${o.empleado},"${o.supervisor||'N/A'}",${o.horaInicio||''},${o.horaFin||''},"${o.estado}",N/A,0,0,0,N/A,N/A,0,N/A,0,""`);
+        // --- GESTIÓN CONTINUA DE DISCREPANCIAS MULTI-CÓDIGO ---
+        function toggleDiscrepanciaPanel() {
+            const tipo = document.getElementById('selectTipoDiscrepancia').value;
+            const container = document.getElementById('discrepancyContainer');
+            if (tipo === 'Sin discrepancia') {
+                container.classList.add('hidden');
+                discrepancyRowsData = [];
+                renderDiscrepancyRows();
+            } else {
+                container.classList.remove('hidden');
+                if (discrepancyRowsData.length === 0) {
+                    addDiscrepancyRow();
                 } else {
-                    o.skus.forEach(s => {
-                        let diffSku = s.auditadas - s.esperadas;
-                        if(s.tarimas.length === 0) {
-                            let discTxt = "Sin discrepancia", discCant = 0, discObs = "N/A";
-                            if(s.discrepancias.length > 0) {
-                                discTxt = s.discrepancias[0].tipo;
-                                discCant = s.discrepancias[0].cantidad;
-                                discObs = (s.discrepancias[0].obs || '').replace(/,/g, ' ');
-                            }
-                            csvLines.push(`${o.oc},${o.empleado},"${o.supervisor||'N/A'}",${o.horaInicio||''},${o.horaFin||''},"${o.estado}","${s.codigo}",${s.esperadas},${s.auditadas},${diffSku},N/A,N/A,0,${discTxt},${discCant},"${discObs}"`);
-                        } else {
-                            s.tarimas.forEach((t, tIdx) => {
-                                t.camas.forEach((c, cIdx) => {
-                                    let discTxt = "Sin discrepancia", discCant = 0, discObs = "N/A";
-                                    if(s.discrepancias.length > 0) {
-                                        discTxt = s.discrepancias[0].tipo;
-                                        discCant = s.discrepancias[0].cantidad;
-                                        discObs = (s.discrepancias[0].obs || '').replace(/,/g, ' ');
-                                    }
-                                    csvLines.push(`${o.oc},${o.empleado},"${o.supervisor||'N/A'}",${o.horaInicio||''},${o.horaFin||''},"${o.estado}","${s.codigo}",${s.esperadas},${s.auditadas},${diffSku},Tarima_${tIdx+1},Cama_${cIdx+1},${c.cantidad},${discTxt},${discCant},"${discObs}"`);
-                                });
-                            });
-                        }
+                    renderDiscrepancyRows();
+                }
+            }
+        }
+
+        function addDiscrepancyRow() {
+            const defaultType = document.getElementById('selectTipoDiscrepancia').value;
+            const tipoFila = (defaultType === 'Sin discrepancia' || defaultType === 'Faltante y Sobrante') ? 'Faltante' : defaultType;
+            discrepancyRowsData.push({ tipo: tipoFila, codigo: '', cajas: '', piezas: '' });
+            renderDiscrepancyRows();
+        }
+
+        function removeDiscrepancyRow(index) {
+            discrepancyRowsData.splice(index, 1);
+            renderDiscrepancyRows();
+        }
+
+        function renderDiscrepancyRows() {
+            const list = document.getElementById('discrepancyRowsList');
+            list.innerHTML = '';
+
+            discrepancyRowsData.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'flex flex-wrap md:flex-nowrap items-center gap-2 bg-white p-2.5 rounded-lg border border-emerald-200 shadow-sm';
+                
+                row.innerHTML = `
+                    <select onchange="updateDiscField(${index}, 'tipo', this.value)" class="border rounded p-1.5 text-xs bg-gray-50 outline-none font-semibold text-emerald-800">
+                        <option value="Faltante" ${item.tipo === 'Faltante' ? 'selected' : ''}>Faltante</option>
+                        <option value="Sobrante" ${item.tipo === 'Sobrante' ? 'selected' : ''}>Sobrante</option>
+                        <option value="Merma" ${item.tipo === 'Merma' ? 'selected' : ''}>Merma</option>
+                    </select>
+                    <input type="text" placeholder="SKU / Código" value="${item.codigo || ''}" oninput="updateDiscField(${index}, 'codigo', this.value)" class="flex-1 min-w-[120px] border rounded p-1.5 text-xs outline-none">
+                    <button onclick="openCameraScanner('disc_${index}')" class="bg-emerald-600 text-white px-2.5 py-1.5 rounded text-xs"><i class="fa-solid fa-camera"></i></button>
+                    <input type="number" placeholder="Cajas" value="${item.cajas || ''}" oninput="updateDiscField(${index}, 'cajas', this.value)" class="w-16 border rounded p-1.5 text-xs outline-none">
+                    <input type="number" placeholder="Piezas" value="${item.piezas || ''}" oninput="updateDiscField(${index}, 'piezas', this.value)" class="w-16 border rounded p-1.5 text-xs outline-none">
+                    <button onclick="removeDiscrepancyRow(${index})" class="text-red-500 hover:text-red-700 px-1 text-sm"><i class="fa-solid fa-trash-can"></i></button>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        function updateDiscField(index, field, value) {
+            if (discrepancyRowsData[index]) {
+                discrepancyRowsData[index][field] = value;
+            }
+        }
+
+        // --- MOTOR DE ESCANEO OPTIMIZADO PARA ENFOQUE Y VELOCIDAD EN IPHONE Y ANDROID ---
+        async function openCameraScanner(target) {
+            activeCameraTarget = target;
+            const modal = document.getElementById('cameraModal');
+            const videoElement = document.getElementById('cameraVideo');
+            const loading = document.getElementById('cameraLoading');
+            const statusText = document.getElementById('cameraStatusText');
+
+            modal.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            statusText.textContent = "Iniciando cámara y optimizando enfoque...";
+
+            await closeCameraScannerAsync();
+
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error("getUserMedia no soportado en este navegador.");
+                }
+
+                // Configuración avanzada orientada a estabilizar enfoque continuo en iOS y Android
+                const constraints = {
+                    video: {
+                        facingMode: { ideal: "environment" },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        advanced: [{ focusMode: "continuous" }] // Solicitud explícita de autofoco continuo compatible con iPhone
+                    },
+                    audio: false
+                };
+
+                // Intento inicial con advanced constraints; si el navegador rechaza advanced, reintentamos de forma limpia
+                try {
+                    mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+                } catch (constraintErr) {
+                    console.warn("Aviso: Constraints avanzados no soportados, aplicando estándar...", constraintErr);
+                    mediaStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { ideal: "environment" } },
+                        audio: false
                     });
                 }
-            });
 
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + csvLines.join("\n");
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Reporte_Turno_Detallado_${new Date().toISOString().slice(0,10)}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+                videoElement.srcObject = mediaStream;
+                await videoElement.play().catch(e => console.log("Play warning:", e));
+
+                loading.classList.add('hidden');
+                statusText.textContent = "Apunta la cámara al código de barras...";
+
+                startOptimizedCanvasDecodingLoop(videoElement);
+
+            } catch (err) {
+                loading.classList.add('hidden');
+                console.error("Error al iniciar cámara:", err);
+                
+                let errorMsg = "No se pudo acceder a la cámara. Verifique permisos HTTPS o use la entrada manual.";
+                if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+                    errorMsg = "Permiso de cámara denegado. Habilite el acceso en la configuración de su navegador.";
+                } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+                    errorMsg = "No se encontró una cámara trasera disponible.";
+                } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
+                    errorMsg = "La cámara está siendo utilizada por otra aplicación o pestaña.";
+                }
+                
+                statusText.innerHTML = `<span class="text-red-400 font-semibold">${errorMsg}</span>`;
+            }
         }
 
-        // PDF INDIVIDUAL EXACTO ESTILO EJECUTIVO (CON COLUMNAS TARIMAS Y CAMAS LADO A LADO)
-        function exportarPDFOrdenActiva() {
-            const orden = obtenerOrdenActiva();
-            if(!orden) { alert('Selecciona una orden activa primero.'); return; }
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4');
-
-            doc.setFontSize(14);
-            doc.setTextColor(200, 200, 200);
-            doc.setFillColor(30, 41, 59);
-            doc.rect(10, 10, 277, 16, 'F');
-            doc.text(`REPORTE DE AUDITORÍA DE RECIBO`, 14, 21);
-            doc.setFontSize(9);
-            doc.text(`Turno: ${turnoData.idTurno} | Generado: ${new Date().toLocaleString()}`, 180, 21);
-
-            doc.setFontSize(10);
-            doc.setTextColor(50, 50, 50);
-            doc.text(`Orden: ${orden.oc} | Empleado: ${orden.empleado} | Supervisor: ${orden.supervisor || 'N/A'} | Estado: ${orden.estado}`, 14, 32);
-
-            let totalTarimasO = 0, totalCamasO = 0;
-            const tableRows = [];
-
-            orden.skus.forEach(s => {
-                let tarimasSKU = s.tarimas.length;
-                totalTarimasO += tarimasSKU;
-                let camasSKU = 0;
-                s.tarimas.forEach(t => camasSKU += t.camas.length);
-                totalCamasO += camasSKU;
-
-                let diff = s.auditadas - s.esperadas;
-                let tipoDisc = "Sin discrepancia";
-                let cantDisc = 0;
-                let obsDisc = "N/A";
-
-                if (s.discrepancias.length > 0) {
-                    tipoDisc = s.discrepancias[0].tipo;
-                    cantDisc = s.discrepancias[0].cantidad;
-                    obsDisc = s.discrepancias[0].obs || "";
-                } else if (diff !== 0) {
-                    tipoDisc = diff < 0 ? "Faltante" : "Sobrante";
-                    cantDisc = Math.abs(diff);
-                    obsDisc = "Diferencia en conteo";
+        async function reiniciarCamaraScanner() {
+            const targetActual = activeCameraTarget;
+            await closeCameraScannerAsync();
+            setTimeout(() => {
+                if (targetActual) {
+                    openCameraScanner(targetActual);
                 }
+            }, 300);
+        }
 
-                tableRows.push([
-                    s.codigo, 
-                    s.esperadas, 
-                    s.auditadas, 
-                    diff, 
-                    tipoDisc, 
-                    obsDisc, 
-                    cantDisc, 
-                    tarimasSKU, 
-                    camasSKU, 
-                    s.discrepancias.length > 0 ? s.discrepancias[0].fechaHora : new Date().toLocaleString()
-                ]);
-            });
+        function startOptimizedCanvasDecodingLoop(videoElement) {
+            const canvas = document.getElementById('hiddenCanvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            
+            let multiFormatReader;
+            try {
+                multiFormatReader = new ZXing.MultiFormatReader();
+                
+                const hints = new Map();
+                const formats = [
+                    ZXing.BarcodeFormat.EAN_13,
+                    ZXing.BarcodeFormat.EAN_8,
+                    ZXing.BarcodeFormat.UPC_A,
+                    ZXing.BarcodeFormat.UPC_E,
+                    ZXing.BarcodeFormat.CODE_128,
+                    ZXing.BarcodeFormat.CODE_39,
+                    ZXing.BarcodeFormat.CODE_93,
+                    ZXing.BarcodeFormat.ITF,
+                    ZXing.BarcodeFormat.QR_CODE,
+                    ZXing.BarcodeFormat.DATA_MATRIX
+                ];
+                hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
+                hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+                multiFormatReader.setHints(hints);
 
-            doc.autoTable({
-                head: [['SKU', 'Cajas Sol.', 'Cajas Audit.', 'Dif.', 'Tipo Disc.', 'Comentario Discrepancia', 'Cajas Disc.', 'Tarimas', 'Camas', 'Fecha/Hora']],
-                body: tableRows,
-                startY: 37,
-                theme: 'grid',
-                headStyles: { fillColor: [30, 41, 59] },
-                styles: { fontSize: 8 }
-            });
-
-            let finalY = doc.lastAutoTable.finalY + 10;
-            doc.setFontSize(10);
-            doc.text(`Resumen Orden - Tarimas contadas: ${totalTarimasO}  |  Camas contadas: ${totalCamasO}`, 14, finalY);
-
-            const pageCount = doc.internal.getNumberOfPages();
-            for(let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(8);
-                doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 10);
+            } catch (e) {
+                console.error("Error al configurar MultiFormatReader:", e);
+                return;
             }
 
-            doc.save(`Auditoria_OC_${orden.oc}.pdf`);
-        }
-
-        // REPORTE PDF CONSOLIDADO DEL TURNO (ESTILO EJECUTIVO EXACTO DE LA IMAGEN)
-        function exportarPDFTurno() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4');
-
-            doc.setFontSize(14);
-            doc.setTextColor(255, 255, 255);
-            doc.setFillColor(30, 41, 59);
-            doc.rect(10, 10, 277, 16, 'F');
-            doc.text(`REPORTE DE AUDITORÍA DE RECIBO`, 14, 21);
-            doc.setFontSize(9);
-            doc.text(`Turno: ${turnoData.idTurno} | Generado: ${new Date().toLocaleString()}`, 175, 21);
-
-            doc.setFontSize(11);
-            doc.setTextColor(30, 30, 30);
-            doc.text("RESUMEN GENERAL DEL TURNO", 14, 34);
-
-            let totalSol = 0, totalCont = 0, totalTarimasTurno = 0, totalCamasTurno = 0;
-            let sumFalt = 0, sumSob = 0;
-
-            turnoData.ordenes.forEach(o => {
-                let esp = o.totalEsperado;
-                let cont = 0;
-                o.skus.forEach(s => cont += s.auditadas);
-                totalSol += esp;
-                totalCont += cont;
-                o.skus.forEach(s => {
-                    totalTarimasTurno += s.tarimas.length;
-                    s.tarimas.forEach(t => totalCamasTurno += t.camas.length);
-                    let diff = s.auditadas - s.esperadas;
-                    if(diff < 0) sumFalt += Math.abs(diff);
-                    if(diff > 0) sumSob += diff;
-                });
-            });
-
-            doc.autoTable({
-                head: [['Órdenes', 'SKUs', 'Cod. Contados', 'Cajas Solicitadas', 'Cajas Auditadas', 'Tarimas', 'Camas', 'Sobrantes', 'Falltantes', 'Mermas']],
-                body: [[
-                    turnoData.ordenes.length,
-                    turnoData.ordenes.reduce((acc, o) => acc + o.skus.length, 0),
-                    turnoData.ordenes.reduce((acc, o) => acc + o.skus.reduce((a, s) => a + (s.auditadas > 0 ? 1 : 0), 0), 0),
-                    totalSol,
-                    totalCont,
-                    totalTarimasTurno,
-                    totalCamasTurno,
-                    sumSob,
-                    sumFalt,
-                    0
-                ]],
-                startY: 38,
-                theme: 'grid',
-                headStyles: { fillColor: [51, 65, 85] },
-                styles: { fontSize: 8, halign: 'center' }
-            });
-
-            let currentY = doc.lastAutoTable.finalY + 12;
-            doc.setFontSize(11);
-            doc.text("DETALLE POR ORDEN DE COMPRA", 14, currentY);
-            currentY += 4;
-
-            turnoData.ordenes.forEach(o => {
-                doc.setFontSize(9);
-                doc.setTextColor(70, 70, 70);
-                doc.text(`Orden: ${o.oc} | Empleado: ${o.empleado} | Supervisor: ${o.supervisor || 'N/A'} | Estado: ${o.estado}`, 14, currentY);
-                currentY += 2;
-
-                let tableRows = [];
-                o.skus.forEach(s => {
-                    let tarimasSKU = s.tarimas.length;
-                    let camasSKU = 0;
-                    s.tarimas.forEach(t => camasSKU += t.camas.length);
-
-                    let diff = s.auditadas - s.esperadas;
-                    let tipoDisc = "Sin discrepancia";
-                    let cantDisc = 0;
-                    let obsDisc = "N/A";
-
-                    if (s.discrepancias.length > 0) {
-                        tipoDisc = s.discrepancias[0].tipo;
-                        cantDisc = s.discrepancias[0].cantidad;
-                        obsDisc = s.discrepancias[0].obs || "";
-                    } else if (diff !== 0) {
-                        tipoDisc = diff < 0 ? "Faltante" : "Sobrante";
-                        cantDisc = Math.abs(diff);
-                        obsDisc = "Diferencia en conteo";
+            // Frecuencia optimizada a 120ms para maximizar velocidad en iPhone sin saturar CPU
+            scanInterval = setInterval(() => {
+                if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
+                    if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
+                        return;
                     }
 
-                    tableRows.push([
-                        s.codigo,
-                        s.esperadas,
-                        s.auditadas,
-                        diff,
-                        tipoDisc,
-                        obsDisc,
-                        cantDisc,
-                        tarimasSKU,
-                        camasSKU,
-                        s.discrepancias.length > 0 ? s.discrepancias[0].fechaHora : new Date().toLocaleString()
-                    ]);
-                });
+                    if (canvas.width !== videoElement.videoWidth || canvas.height !== videoElement.videoHeight) {
+                        canvas.width = videoElement.videoWidth;
+                        canvas.height = videoElement.videoHeight;
+                    }
 
-                doc.autoTable({
-                    head: [['SKU', 'Cajas Sol.', 'Cajas Audit.', 'Dif.', 'Tipo Disc.', 'Comentario Discrepancia', 'Cajas Disc.', 'Tarimas', 'Camas', 'Fecha/Hora']],
-                    body: tableRows,
-                    startY: currentY,
-                    theme: 'grid',
-                    headStyles: { fillColor: [79, 70, 229] },
-                    styles: { fontSize: 7 }
-                });
+                    try {
+                        // Optimización de región central / recorte virtual para lectura rápida en iPhone
+                        const cropWidth = Math.floor(canvas.width * 0.85);
+                        const cropHeight = Math.floor(canvas.height * 0.85);
+                        const startX = Math.floor((canvas.width - cropWidth) / 2);
+                        const startY = Math.floor((canvas.height - cropHeight) / 2);
 
-                currentY = doc.lastAutoTable.finalY + 8;
-                if(currentY > 180) {
-                    doc.addPage();
-                    currentY = 20;
+                        ctx.drawImage(videoElement, startX, startY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+                        
+                        // Ajuste temporal del canvas para el motor de ZXing
+                        const tempCanvasW = canvas.width;
+                        const tempCanvasH = canvas.height;
+                        canvas.width = cropWidth;
+                        canvas.height = cropHeight;
+
+                        const luminanceSource = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
+                        const binaryBitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminanceSource));
+                        
+                        const result = multiFormatReader.decodeWithState(binaryBitmap);
+
+                        // Restaurar dimensiones originales del canvas interno
+                        canvas.width = tempCanvasW;
+                        canvas.height = tempCanvasH;
+
+                        if (result) {
+                            const codeText = result.getText();
+                            const now = Date.now();
+
+                            if (codeText === lastScannedCode && (now - lastScannedTime < 2000)) {
+                                multiFormatReader.reset();
+                                return;
+                            }
+
+                            lastScannedCode = codeText;
+                            lastScannedTime = now;
+
+                            if (navigator.vibrate) {
+                                navigator.vibrate(100);
+                            }
+
+                            if (activeCameraTarget === 'articulos_burst') {
+                                closeCameraScanner();
+                                solicitarCantidadCajasParaArticulo(codeText);
+                            } else {
+                                closeCameraScanner();
+                                handleScannedValue(codeText);
+                            }
+                        }
+                    } catch (e) {
+                        try { multiFormatReader.reset(); } catch(err) {}
+
+                        if (!(e instanceof ZXing.NotFoundException) && !(e instanceof ZXing.ChecksumException) && !(e instanceof ZXing.FormatException)) {
+                            console.warn("Aviso técnico en decodificación:", e);
+                        }
+                    }
+                }
+            }, 120);
+        }
+
+        async function closeCameraScannerAsync() {
+            if (scanInterval) {
+                clearInterval(scanInterval);
+                scanInterval = null;
+            }
+
+            const videoElement = document.getElementById('cameraVideo');
+            if (videoElement) {
+                videoElement.pause();
+                videoElement.srcObject = null;
+            }
+
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+        }
+
+        function closeCameraScanner() {
+            closeCameraScannerAsync();
+            document.getElementById('cameraModal').classList.add('hidden');
+        }
+
+        function submitManualCameraFallback() {
+            const val = document.getElementById('manualCameraFallback').value.trim();
+            if (val) {
+                closeCameraScanner();
+                if (activeCameraTarget === 'articulos_burst') {
+                    solicitarCantidadCajasParaArticulo(val);
+                } else {
+                    handleScannedValue(val);
+                }
+                document.getElementById('manualCameraFallback').value = '';
+            }
+        }
+
+        function handleScannedValue(code) {
+            if (activeCameraTarget === 'carton') {
+                document.getElementById('inputCarton').value = code;
+            } else if (activeCameraTarget && activeCameraTarget.startsWith('disc_')) {
+                const idx = parseInt(activeCameraTarget.split('_')[1]);
+                if (discrepancyRowsData[idx]) {
+                    discrepancyRowsData[idx].codigo = code;
+                    renderDiscrepancyRows();
+                }
+            }
+        }
+
+        // Guardar o Actualizar Registro
+        function guardarRegistro() {
+            const empleado = document.getElementById('selectEmpleado').value;
+            const psq = document.getElementById('inputPsq').value.trim();
+            const destino = document.getElementById('inputDestino').value.trim();
+            const carton = document.getElementById('inputCarton').value.trim();
+            const tipoDiscrepancia = document.getElementById('selectTipoDiscrepancia').value;
+
+            if (!empleado) {
+                Swal.fire('Atención', 'Seleccione un número de empleado.', 'warning');
+                return;
+            }
+            if (!carton) {
+                Swal.fire('Atención', 'Ingrese o escanee el código de cartón.', 'warning');
+                return;
+            }
+
+            if (editingRecordId !== null) {
+                const index = registros.findIndex(r => r.id === editingRecordId);
+                if (index !== -1) {
+                    registros[index].empleado = empleado;
+                    registros[index].psq = psq || 'N/A';
+                    registros[index].destino = destino || 'N/A';
+                    registros[index].carton = carton;
+                    registros[index].articulosDetalle = JSON.parse(JSON.stringify(listaArticulosDetalle));
+                    registros[index].tipoDiscrepancia = tipoDiscrepancia;
+                    registros[index].discrepanciasDetalle = tipoDiscrepancia !== 'Sin discrepancia' ? JSON.parse(JSON.stringify(discrepancyRowsData)) : [];
+                }
+                Swal.fire({ icon: 'success', title: '¡Actualizado!', timer: 1200, showConfirmButton: false });
+                cancelarEdicion();
+            } else {
+                const ahora = new Date();
+                const fechaHoraStr = ahora.toLocaleDateString() + ' ' + ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                const nuevoRegistro = {
+                    id: Date.now(),
+                    fechaHora: fechaHoraStr,
+                    empleado,
+                    psq: psq || 'N/A',
+                    destino: destino || 'N/A',
+                    carton,
+                    articulosDetalle: JSON.parse(JSON.stringify(listaArticulosDetalle)),
+                    tipoDiscrepancia,
+                    discrepanciasDetalle: tipoDiscrepancia !== 'Sin discrepancia' ? JSON.parse(JSON.stringify(discrepancyRowsData)) : []
+                };
+
+                registros.push(nuevoRegistro);
+                Swal.fire({ icon: 'success', title: '¡Guardado!', timer: 1200, showConfirmButton: false });
+                resetForm();
+            }
+
+            saveToStorage();
+        }
+
+        function editarRegistro(id) {
+            const registro = registros.find(r => r.id === id);
+            if (!registro) return;
+
+            editingRecordId = id;
+            document.getElementById('selectEmpleado').value = registro.empleado;
+            document.getElementById('inputPsq').value = registro.psq !== 'N/A' ? registro.psq : '';
+            document.getElementById('inputDestino').value = registro.destino !== 'N/A' ? registro.destino : '';
+            document.getElementById('inputCarton').value = registro.carton;
+            
+            if (registro.articulosDetalle && Array.isArray(registro.articulosDetalle)) {
+                listaArticulosDetalle = JSON.parse(JSON.stringify(registro.articulosDetalle));
+            } else if (registro.articulos && Array.isArray(registro.articulos)) {
+                listaArticulosDetalle = registro.articulos.map(code => ({ codigo: code, cajas: 1 }));
+            } else {
+                listaArticulosDetalle = [];
+            }
+            updateArticulosView();
+
+            document.getElementById('selectTipoDiscrepancia').value = registro.tipoDiscrepancia || 'Sin discrepancia';
+            toggleDiscrepanciaPanel();
+            
+            if (registro.discrepanciasDetalle && Array.isArray(registro.discrepanciasDetalle)) {
+                discrepancyRowsData = JSON.parse(JSON.stringify(registro.discrepanciasDetalle));
+                renderDiscrepancyRows();
+            }
+
+            document.getElementById('formTitleText').innerHTML = `<i class="fa-solid fa-pen-to-square text-amber-600 mr-2"></i> Editando Auditoría (#${id})`;
+            document.getElementById('btnGuardarText').textContent = "Actualizar Registro";
+            document.getElementById('btnGuardarRegistro').classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+            document.getElementById('btnGuardarRegistro').classList.add('bg-amber-600', 'hover:bg-amber-700');
+            document.getElementById('btnCancelarEdicion').classList.remove('hidden');
+            document.getElementById('btnCancelarEdicion').classList.add('flex');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cancelarEdicion() {
+            editingRecordId = null;
+            document.getElementById('formTitleText').innerHTML = `<i class="fa-solid fa-clipboard-list text-emerald-600 mr-2"></i> Captura de Auditoría`;
+            document.getElementById('btnGuardarText').textContent = "Guardar Registro";
+            document.getElementById('btnGuardarRegistro').classList.remove('bg-amber-600', 'hover:bg-amber-700');
+            document.getElementById('btnGuardarRegistro').classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+            document.getElementById('btnCancelarEdicion').classList.remove('flex');
+            document.getElementById('btnCancelarEdicion').classList.add('hidden');
+            resetForm();
+        }
+
+        function resetForm() {
+            document.getElementById('inputPsq').value = '';
+            document.getElementById('inputDestino').value = '';
+            document.getElementById('inputCarton').value = '';
+            listaArticulosDetalle = [];
+            discrepancyRowsData = [];
+            updateArticulosView();
+            document.getElementById('selectTipoDiscrepancia').value = 'Sin discrepancia';
+            toggleDiscrepanciaPanel();
+        }
+
+        function deleteRecord(id) {
+            Swal.fire({
+                title: '¿Eliminar registro?',
+                text: "Esta acción no se puede deshacer.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    registros = registros.filter(r => r.id !== id);
+                    saveToStorage();
+                    Swal.fire({ icon: 'success', title: 'Eliminado', timer: 1000, showConfirmButton: false });
                 }
             });
-
-            const pageCount = doc.internal.getNumberOfPages();
-            for(let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(8);
-                doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 10);
-            }
-
-            doc.save(`Reporte_Auditoria_Recibo_${new Date().toISOString().slice(0,10)}.pdf`);
         }
 
-        // CERRAR TURNO Y REINICIAR
-        function abrirModalCerrarTurno() {
-            const pendientes = turnoData.ordenes.filter(o => o.estado === 'En Proceso');
-            if(pendientes.length > 0) {
-                if(!confirm(`Atención: Tienes ${pendientes.length} órdenes en estado "En Proceso". ¿Deseas cerrar el turno de todas formas?`)) {
-                    return;
+        function vaciarTodosLosRegistrosPrompt() {
+            if (registros.length === 0) {
+                Swal.fire('Atención', 'No hay registros guardados actualmente.', 'info');
+                return;
+            }
+
+            Swal.fire({
+                title: '¿Vaciar todos los registros?',
+                text: "Se eliminarán permanentemente todos los registros guardados en la tabla y en el almacenamiento local.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, vaciar todo',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    registros = [];
+                    saveToStorage();
+                    cancelarEdicion();
+                    Swal.fire({ icon: 'success', title: '¡Registros vaciados!', text: 'La aplicación está lista para nuevas auditorías.', timer: 1500, showConfirmButton: false });
                 }
+            });
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBodyRecords');
+            document.getElementById('badgeCount').textContent = `${registros.length} registros`;
+
+            if (registros.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-gray-400">No hay registros guardados todavía</td></tr>`;
+                return;
             }
-            document.getElementById('modal-cerrar-turno').classList.remove('hidden');
+
+            tbody.innerHTML = '';
+            registros.forEach((r, idx) => {
+                let artsDetalleArr = [];
+                if (r.articulosDetalle && Array.isArray(r.articulosDetalle)) {
+                    artsDetalleArr = r.articulosDetalle;
+                } else if (r.articulos && Array.isArray(r.articulos)) {
+                    artsDetalleArr = r.articulos.map(c => ({ codigo: c, cajas: 1 }));
+                }
+                
+                let artsText = `${artsDetalleArr.length} arts`;
+                let artsTooltip = artsDetalleArr.map(item => `${item.codigo} (Cajas: ${item.cajas})`).join(', ');
+
+                let discText = r.tipoDiscrepancia || 'Sin discrepancia';
+                if (r.discrepanciasDetalle && r.discrepanciasDetalle.length > 0) {
+                    discText += ': ' + r.discrepanciasDetalle.map(d => `[${d.tipo}: ${d.codigo || 'S/C'}, Cajas: ${d.cajas || 0}, Pzs: ${d.piezas || 0}]`).join(' | ');
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 border-b';
+                tr.innerHTML = `
+                    <td class="p-2 font-medium">${idx + 1}</td>
+                    <td class="p-2 text-gray-500 whitespace-nowrap">${r.fechaHora || 'N/A'}</td>
+                    <td class="p-2">${r.empleado}</td>
+                    <td class="p-2 font-semibold text-slate-700">${r.psq || 'N/A'}</td>
+                    <td class="p-2">${r.destino}</td>
+                    <td class="p-2 font-mono text-emerald-700 font-bold">${r.carton}</td>
+                    <td class="p-2" title="${artsTooltip}"><span class="bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-medium">${artsText}</span></td>
+                    <td class="p-2 text-gray-600 max-w-xs truncate" title="${discText}">${discText}</td>
+                    <td class="p-2 text-center whitespace-nowrap space-x-1">
+                        <button onclick="editarRegistro(${r.id})" class="text-amber-600 hover:text-amber-800 p-1" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteRecord(${r.id})" class="text-red-500 hover:text-red-700 p-1" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
-        function cerrarModalCerrarTurno() {
-            document.getElementById('modal-cerrar-turno').classList.add('hidden');
+        // Exportación con PSQ y Detalle de Cajas Físicas
+        function exportToExcelModal() {
+            const modal = document.getElementById('exportModal');
+            const textarea = document.getElementById('exportTextarea');
+
+            let csv = "ID\tFecha_Hora\tEmpleado\tPSQ\tDestino\tCarton\tTotal_Arts\tArticulos_y_Cajas\tTipo_Discrepancia\tDetalle_Discrepancias\n";
+            registros.forEach((r, idx) => {
+                let artsDetalleArr = [];
+                if (r.articulosDetalle && Array.isArray(r.articulosDetalle)) {
+                    artsDetalleArr = r.articulosDetalle;
+                } else if (r.articulos && Array.isArray(r.articulos)) {
+                    artsDetalleArr = r.articulos.map(c => ({ codigo: c, cajas: 1 }));
+                }
+                let artsStr = artsDetalleArr.map(item => `${item.codigo} [Cajas:${item.cajas}]`).join('; ');
+
+                let detalle = (r.discrepanciasDetalle || []).map(d => `${d.tipo}:${d.codigo} Cajas:${d.cajas} Pzs:${d.piezas}`).join('; ');
+                csv += `${idx + 1}\t"${r.fechaHora || 'N/A'}"\t${r.empleado}\t"${r.psq || 'N/A'}"\t${r.destino}\t${r.carton}\t${artsDetalleArr.length}\t"${artsStr}"\t${r.tipoDiscrepancia}\t"${detalle}"\n`;
+            });
+
+            textarea.value = csv;
+            modal.classList.remove('hidden');
         }
 
-        function confirmarCierreTurnoSinDescarga() {
-            historialTurnos.push(turnoData);
-            turnoData = {
-                idTurno: 'TURNO-' + new Date().toISOString().slice(0,10) + '-' + Math.floor(Math.random()*1000),
-                fechaInicio: new Date().toLocaleString(),
-                ordenes: []
-            };
-            ordenActivaId = null;
-            guardarTurnoLocal();
-            cerrarModalCerrarTurno();
-            actualizarTablaOrdenes();
-            alert('Turno cerrado y reiniciado exitosamente. Las órdenes anteriores se guardaron en el historial.');
-            cambiarPestana(1);
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.add('hidden');
+        }
+
+        function copyExportText() {
+            const textarea = document.getElementById('exportTextarea');
+            textarea.select();
+            document.execCommand('copy');
+            Swal.fire({ icon: 'success', title: '¡Copiado!', timer: 1200, showConfirmButton: false });
+        }
+
+        function downloadCSVFile() {
+            const text = document.getElementById('exportTextarea').value;
+            const blob = new Blob(["\uFEFF" + text], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Auditoria_Cartones_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function copyTableToClipboard() {
+            exportToExcelModal();
         }
     </script>
 </body>
