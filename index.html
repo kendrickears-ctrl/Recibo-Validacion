@@ -901,14 +901,14 @@
             XLSX.writeFile(wb, `Reporte_Turno_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        // EXPORTAR CSV TABULAR UNIFICADO
+        // EXPORTAR CSV TURNO (MODIFICACIÓN: SIN COLUMNA ESTADO Y DIFERENCIAS ÚNICAMENTE EN SU CAMA CORRESPONDIENTE)
         function exportarCSVTurno() {
             let csvLines = [];
-            csvLines.push("ORDEN_COMPRA,EMPLEADO,SUPERVISOR,HORA_INICIO,HORA_FIN,ESTADO_ORDEN,SKU,CAJAS_ESPERADAS_SKU,CAJAS_CONTABILIZADAS_SKU,DIFERENCIA_SKU,TARIMA,CAMA,CAJAS_CAMA,DISCREPANCIA_TIPO,DISCREPANCIA_CANTIDAD,DISCREPANCIA_OBS");
+            csvLines.push("ORDEN_COMPRA,EMPLEADO,SUPERVISOR,HORA_INICIO,HORA_FIN,SKU,CAJAS_ESPERADAS_SKU,CAJAS_CONTABILIZADAS_SKU,DIFERENCIA_SKU,TARIMA,CAMA,CAJAS_CAMA,DISCREPANCIA_TIPO,DISCREPANCIA_CANTIDAD,DISCREPANCIA_OBS");
 
             turnoData.ordenes.forEach(o => {
                 if(o.skus.length === 0) {
-                    csvLines.push(`${o.oc},${o.empleado},"${o.supervisor||'N/A'}",${o.horaInicio||''},${o.horaFin||''},"${o.estado}",N/A,0,0,0,N/A,N/A,0,N/A,0,""`);
+                    csvLines.push(`${o.oc},${o.empleado},"${o.supervisor||'N/A'}",${o.horaInicio||''},${o.horaFin||''},N/A,0,0,0,N/A,N/A,0,N/A,0,""`);
                 } else {
                     o.skus.forEach(s => {
                         let diffSku = s.auditadas - s.esperadas;
@@ -919,17 +919,26 @@
                                 discCant = s.discrepancias[0].cantidad;
                                 discObs = (s.discrepancias[0].obs || '').replace(/,/g, ' ');
                             }
-                            csvLines.push(`${o.oc},${o.empleado},"${o.supervisor||'N/A'}",${o.horaInicio||''},${o.horaFin||''},"${o.estado}","${s.codigo}",${s.esperadas},${s.auditadas},${diffSku},N/A,N/A,0,${discTxt},${discCant},"${discObs}"`);
+                            csvLines.push(`${o.oc},${o.empleado},"${o.supervisor||'N/A'}",${o.horaInicio||''},${o.horaFin||''},"${s.codigo}",${s.esperadas},${s.auditadas},${diffSku},N/A,N/A,0,${discTxt},${discCant},"${discObs}"`);
                         } else {
                             s.tarimas.forEach((t, tIdx) => {
                                 t.camas.forEach((c, cIdx) => {
+                                    // Verificamos si esta tarima y cama exacta tienen discrepancia registrada
+                                    let discExacta = s.discrepancias.find(d => d.tarima == (tIdx+1) && d.cama == (cIdx+1));
                                     let discTxt = "Sin discrepancia", discCant = 0, discObs = "N/A";
-                                    if(s.discrepancias.length > 0) {
+                                    
+                                    if(discExacta) {
+                                        discTxt = discExacta.tipo;
+                                        discCant = discExacta.cantidad;
+                                        discObs = (discExacta.obs || '').replace(/,/g, ' ');
+                                    } else if(s.discrepancias.length > 0 && tIdx === 0 && cIdx === 0 && !s.discrepancias.some(d => d.tarima)) {
+                                        // Compatibilidad si la discrepancia no tiene tarima explícita pero es la única
                                         discTxt = s.discrepancias[0].tipo;
                                         discCant = s.discrepancias[0].cantidad;
                                         discObs = (s.discrepancias[0].obs || '').replace(/,/g, ' ');
                                     }
-                                    csvLines.push(`${o.oc},${o.empleado},"${o.supervisor||'N/A'}",${o.horaInicio||''},${o.horaFin||''},"${o.estado}","${s.codigo}",${s.esperadas},${s.auditadas},${diffSku},Tarima_${tIdx+1},Cama_${cIdx+1},${c.cantidad},${discTxt},${discCant},"${discObs}"`);
+
+                                    csvLines.push(`${o.oc},${o.empleado},"${o.supervisor||'N/A'}",${o.horaInicio||''},${o.horaFin||''},"${s.codigo}",${s.esperadas},${s.auditadas},${diffSku},Tarima_${tIdx+1},Cama_${cIdx+1},${c.cantidad},${discTxt},${discCant},"${discObs}"`);
                                 });
                             });
                         }
@@ -947,7 +956,7 @@
             document.body.removeChild(link);
         }
 
-        // PDF INDIVIDUAL EXACTO ESTILO EJECUTIVO (CON COLUMNAS TARIMAS Y CAMAS LADO A LADO)
+        // PDF INDIVIDUAL EXACTO ESTILO EJECUTIVO (INALTERADO)
         function exportarPDFOrdenActiva() {
             const orden = obtenerOrdenActiva();
             if(!orden) { alert('Selecciona una orden activa primero.'); return; }
@@ -1029,7 +1038,7 @@
             doc.save(`Auditoria_OC_${orden.oc}.pdf`);
         }
 
-        // REPORTE PDF CONSOLIDADO DEL TURNO (ESTILO EJECUTIVO EXACTO DE LA IMAGEN)
+        // REPORTE PDF CONSOLIDADO DEL TURNO (INALTERADO)
         function exportarPDFTurno() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('l', 'mm', 'a4');
