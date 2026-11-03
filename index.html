@@ -901,7 +901,7 @@
             XLSX.writeFile(wb, `Reporte_Turno_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        // EXPORTAR CSV TURNO (FILAS DETALLADAS POR CADA CAMA Y TARIMA, CON SOBRANTE/FALTANTE/MERMA ÚNICAMENTE EN LA PRIMERA FILA DEL SKU)
+        // EXPORTAR CSV TURNO (CON COLUMNA DE SUPERVISOR, ESPERADA/RECIBIDA ÚNICAMENTE EN PRIMERA FILA Y DESGLOSE DE CAMA)
         function exportarCSVTurno() {
             let csvRows = [];
             
@@ -919,6 +919,7 @@
                 "Cama",
                 "Fecha",
                 "Empleado",
+                "Supervisor",
                 "Auditor"
             ];
             csvRows.push(headers.join(","));
@@ -932,7 +933,8 @@
             let ordenesOrdenadas = [...turnoData.ordenes].sort((a, b) => a.oc.localeCompare(b.oc, undefined, {numeric: true}));
 
             ordenesOrdenadas.forEach(o => {
-                let auditorNombre = o.supervisor || o.empleado || "N/A";
+                let supervisorNombre = o.supervisor || "N/A";
+                let auditorNombre = o.empleado || "N/A";
                 let fechaRegistro = o.horaInicio || new Date().toLocaleDateString();
 
                 if (o.skus && o.skus.length > 0) {
@@ -941,6 +943,7 @@
                     skusOrdenados.forEach(s => {
                         let primeraFilaSKU = true;
                         let cantidadEsperadaStr = s.esperadas;
+                        let cantidadRecibidaStr = s.auditadas;
 
                         // Calcular discrepancias generales de este SKU para colocarlas solo en la primera fila
                         let discTipoPrincipal = "";
@@ -984,9 +987,10 @@
 
                                     camasOrdenadas.forEach((c, cIdx) => {
                                         let numCama = c.id || (cIdx + 1);
-                                        let cantidadRecibidaCama = c.cantidad || 0;
+                                        let cajasEnCama = c.cantidad || 0;
 
                                         let expVal = primeraFilaSKU ? cantidadEsperadaStr : "";
+                                        let recVal = primeraFilaSKU ? cantidadRecibidaStr : "";
                                         let discTipoRow = primeraFilaSKU ? discTipoPrincipal : "";
                                         let sobranteRow = primeraFilaSKU ? sobranteVal : 0;
                                         let faltanteRow = primeraFilaSKU ? faltanteVal : 0;
@@ -998,15 +1002,16 @@
                                             `"${o.oc}"`,
                                             `"${s.codigo}"`,
                                             expVal,
-                                            cantidadRecibidaCama,
+                                            recVal,
                                             `"${discTipoRow}"`,
                                             sobranteRow,
                                             faltanteRow,
                                             mermaRow,
                                             numTarima,
-                                            numCama,
+                                            cajasEnCama,
                                             `"${fechaRegistro}"`,
                                             `"${o.empleado}"`,
+                                            `"${supervisorNombre}"`,
                                             `"${auditorNombre}"`
                                         ];
                                         csvRows.push(row.join(","));
@@ -1025,9 +1030,10 @@
                                 faltanteVal,
                                 mermaVal,
                                 "",
-                                "",
+                                s.auditadas || 0,
                                 `"${fechaRegistro}"`,
                                 `"${o.empleado}"`,
+                                `"${supervisorNombre}"`,
                                 `"${auditorNombre}"`
                             ];
                             csvRows.push(row.join(","));
