@@ -313,7 +313,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE DISCREPANCIAS (SIN CAMPOS DE TARIMA Y CAMA) -->
+    <!-- MODAL DE DISCREPANCIAS -->
     <div id="modal-discrepancia" class="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4 shadow-2xl text-slate-100">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2">
@@ -458,7 +458,7 @@
                 empleado: empleado,
                 supervisor: supervisor,
                 totalEsperado: totalEsperado,
-                horaInicio: new Date().toLocaleTimeString(),
+                horaInicio: new Date().toLocaleDateString(),
                 horaFin: '',
                 skus: [],
                 estado: 'En Proceso'
@@ -777,7 +777,7 @@
             });
 
             orden.estado = hayDiff ? 'Finalizado con discrepancias' : 'Finalizado sin diferencias';
-            orden.horaFin = new Date().toLocaleTimeString();
+            orden.horaFin = new Date().toLocaleDateString();
             guardarTurnoLocal();
             actualizarTablaOrdenes();
             alert(`Orden ${orden.oc} concluida y guardada.`);
@@ -809,7 +809,7 @@
             if(cantidad <= 0) { alert('Ingresa cantidad válida.'); return; }
 
             sku.discrepancias.push({
-                tipo, cantidad, obs, empleado: orden.empleado, fechaHora: new Date().toLocaleString()
+                tipo, cantidad, obs, empleado: orden.empleado, fechaHora: new Date().toLocaleDateString()
             });
 
             cerrarModalDiscrepancia();
@@ -901,59 +901,137 @@
             XLSX.writeFile(wb, `Reporte_Turno_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        // EXPORTAR CSV TURNO (MODIFICACIÓN: SIN COLUMNA ESTADO Y DIFERENCIAS ÚNICAMENTE EN SU CAMA CORRESPONDIENTE)
+        // EXPORTAR CSV TURNO (MECANISMO DE DESCARGA ROBUSTO Y FILAS ORGANIZADAS POR CADA CAMA Y TARIMA)
         function exportarCSVTurno() {
-            let csvLines = [];
-            csvLines.push("ORDEN_COMPRA,EMPLEADO,SUPERVISOR,HORA_INICIO,HORA_FIN,SKU,CAJAS_ESPERADAS_SKU,CAJAS_CONTABILIZADAS_SKU,DIFERENCIA_SKU,TARIMA,CAMA,CAJAS_CAMA,DISCREPANCIA_TIPO,DISCREPANCIA_CANTIDAD,DISCREPANCIA_OBS");
+            let csvRows = [];
+            
+            // Encabezados exactos requeridos
+            const headers = [
+                "Número de orden",
+                "SKU",
+                "Cantidad esperada",
+                "Cantidad recibida",
+                "Discrepancias",
+                "Sobrante",
+                "Faltante",
+                "Merma",
+                "Tarima",
+                "Cama",
+                "Fecha",
+                "Empleado",
+                "Auditor"
+            ];
+            csvRows.push(headers.join(","));
 
-            turnoData.ordenes.forEach(o => {
-                if(o.skus.length === 0) {
-                    csvLines.push(`${o.oc},${o.empleado},"${o.supervisor||'N/A'}",${o.horaInicio||''},${o.horaFin||''},N/A,0,0,0,N/A,N/A,0,N/A,0,""`);
-                } else {
-                    o.skus.forEach(s => {
-                        let diffSku = s.auditadas - s.esperadas;
-                        if(s.tarimas.length === 0) {
-                            let discTxt = "Sin discrepancia", discCant = 0, discObs = "N/A";
-                            if(s.discrepancias.length > 0) {
-                                discTxt = s.discrepancias[0].tipo;
-                                discCant = s.discrepancias[0].cantidad;
-                                discObs = (s.discrepancias[0].obs || '').replace(/,/g, ' ');
-                            }
-                            csvLines.push(`${o.oc},${o.empleado},"${o.supervisor||'N/A'}",${o.horaInicio||''},${o.horaFin||''},"${s.codigo}",${s.esperadas},${s.auditadas},${diffSku},N/A,N/A,0,${discTxt},${discCant},"${discObs}"`);
-                        } else {
-                            s.tarimas.forEach((t, tIdx) => {
-                                t.camas.forEach((c, cIdx) => {
-                                    // Verificamos si esta tarima y cama exacta tienen discrepancia registrada
-                                    let discExacta = s.discrepancias.find(d => d.tarima == (tIdx+1) && d.cama == (cIdx+1));
-                                    let discTxt = "Sin discrepancia", discCant = 0, discObs = "N/A";
-                                    
-                                    if(discExacta) {
-                                        discTxt = discExacta.tipo;
-                                        discCant = discExacta.cantidad;
-                                        discObs = (discExacta.obs || '').replace(/,/g, ' ');
-                                    } else if(s.discrepancias.length > 0 && tIdx === 0 && cIdx === 0 && !s.discrepancias.some(d => d.tarima)) {
-                                        // Compatibilidad si la discrepancia no tiene tarima explícita pero es la única
-                                        discTxt = s.discrepancias[0].tipo;
-                                        discCant = s.discrepancias[0].cantidad;
-                                        discObs = (s.discrepancias[0].obs || '').replace(/,/g, ' ');
-                                    }
+            if (!turnoData.ordenes || turnoData.ordenes.length === 0) {
+                alert("No hay órdenes registradas para exportar.");
+                return;
+            }
 
-                                    csvLines.push(`${o.oc},${o.empleado},"${o.supervisor||'N/A'}",${o.horaInicio||''},${o.horaFin||''},"${s.codigo}",${s.esperadas},${s.auditadas},${diffSku},Tarima_${tIdx+1},Cama_${cIdx+1},${c.cantidad},${discTxt},${discCant},"${discObs}"`);
-                                });
+            // Ordenar órdenes por número de orden
+            let ordenesOrdenadas = [...turnoData.ordenes].sort((a, b) => a.oc.localeCompare(b.oc, undefined, {numeric: true}));
+
+            ordenesOrdenadas.forEach(o => {
+                let auditorNombre = o.supervisor || o.empleado || "N/A";
+                let fechaRegistro = o.horaInicio || new Date().toLocaleDateString();
+
+                if (o.skus && o.skus.length > 0) {
+                    let skusOrdenados = [...o.skus].sort((a, b) => a.codigo.localeCompare(b.codigo, undefined, {numeric: true}));
+
+                    skusOrdenados.forEach(s => {
+                        let primeraFilaSKU = true;
+                        let cantidadEsperadaStr = s.esperadas;
+
+                        if (s.tarimas && s.tarimas.length > 0) {
+                            let tarimasOrdenadas = [...s.tarimas].sort((a, b) => a.id - b.id);
+
+                            tarimasOrdenadas.forEach((t, tIdx) => {
+                                let numTarima = t.id || (tIdx + 1);
+                                if (t.camas && t.camas.length > 0) {
+                                    let camasOrdenadas = [...t.camas].sort((a, b) => a.id - b.id);
+
+                                    camasOrdenadas.forEach((c, cIdx) => {
+                                        let numCama = c.id || (cIdx + 1);
+                                        let cantidadRecibida = c.cantidad || 0;
+
+                                        let discTipo = "";
+                                        let sobrante = 0;
+                                        let faltante = 0;
+                                        let merma = 0;
+
+                                        // Verificar si hay discrepancia registrada para este SKU
+                                        if (s.discrepancias && s.discrepancias.length > 0) {
+                                            // Asignar a la primera cama si no hay especificación o coincidencia estricta
+                                            if (s.discrepancias.length === 1 && primcFilaSKU && tIdx === 0 && cIdx === 0) {
+                                                let d = s.discrepancias[0];
+                                                discTipo = d.tipo || "";
+                                                if (d.tipo === "Sobrante") sobrante = d.cantidad || 0;
+                                                if (d.tipo === "Faltante") faltante = d.cantidad || 0;
+                                                if (d.tipo === "Merma") merma = d.cantidad || 0;
+                                            }
+                                        }
+
+                                        let expVal = primeraFilaSKU ? cantidadEsperadaStr : "";
+                                        primeraFilaSKU = false;
+
+                                        let row = [
+                                            `"${o.oc}"`,
+                                            `"${s.codigo}"`,
+                                            expVal,
+                                            cantidadRecibida,
+                                            `"${discTipo}"`,
+                                            sobrante,
+                                            faltante,
+                                            merma,
+                                            numTarima,
+                                            numCama,
+                                            `"${fechaRegistro}"`,
+                                            `"${o.empleado}"`,
+                                            `"${auditorNombre}"`
+                                        ];
+                                        csvRows.push(row.join(","));
+                                    });
+                                }
                             });
+                        } else {
+                            // SKU sin tarimas registradas aún
+                            let row = [
+                                `"${o.oc}"`,
+                                `"${s.codigo}"`,
+                                s.esperadas,
+                                s.auditadas || 0,
+                                "",
+                                0,
+                                0,
+                                0,
+                                "",
+                                "",
+                                `"${fechaRegistro}"`,
+                                `"${o.empleado}"`,
+                                `"${auditorNombre}"`
+                            ];
+                            csvRows.push(row.join(","));
                         }
                     });
                 }
             });
 
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + csvLines.join("\n");
-            const encodedUri = encodeURI(csvContent);
+            // Generar Blob con UTF-8 BOM para correcta apertura en Excel
+            const csvString = "\uFEFF" + csvRows.join("\r\n");
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            
+            // Mecanismo seguro de descarga compatible con escritorio y móviles
+            const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Reporte_Turno_Detallado_${new Date().toISOString().slice(0,10)}.csv`);
+            link.href = url;
+            link.setAttribute("download", `Reporte_Auditoria_Detallado_${new Date().toISOString().slice(0,10)}.csv`);
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
+            
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, 200);
         }
 
         // PDF INDIVIDUAL EXACTO ESTILO EJECUTIVO (INALTERADO)
@@ -1011,7 +1089,7 @@
                     cantDisc, 
                     tarimasSKU, 
                     camasSKU, 
-                    s.discrepancias.length > 0 ? s.discrepancias[0].fechaHora : new Date().toLocaleString()
+                    s.discrepancias.length > 0 ? s.discrepancias[0].fechaHora : new Date().toLocaleDateString()
                 ]);
             });
 
@@ -1135,7 +1213,7 @@
                         cantDisc,
                         tarimasSKU,
                         camasSKU,
-                        s.discrepancias.length > 0 ? s.discrepancias[0].fechaHora : new Date().toLocaleString()
+                        s.discrepancias.length > 0 ? s.discrepancias[0].fechaHora : new Date().toLocaleDateString()
                     ]);
                 });
 
@@ -1184,7 +1262,7 @@
             historialTurnos.push(turnoData);
             turnoData = {
                 idTurno: 'TURNO-' + new Date().toISOString().slice(0,10) + '-' + Math.floor(Math.random()*1000),
-                fechaInicio: new Date().toLocaleString(),
+                fechaInicio: new Date().toLocaleDateString(),
                 ordenes: []
             };
             ordenActivaId = null;
