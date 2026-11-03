@@ -374,7 +374,7 @@
         // ESTADO GLOBAL DEL TURNO Y HISTORIAL
         let turnoData = {
             idTurno: 'TURNO-' + new Date().toISOString().slice(0,10) + '-' + Math.floor(Math.random()*1000),
-            fechaInicio: new Date().toLocaleString(),
+            fechaInicio: new Date().toLocaleDateString(),
             ordenes: [] 
         };
 
@@ -901,11 +901,11 @@
             XLSX.writeFile(wb, `Reporte_Turno_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        // EXPORTAR CSV TURNO (MECANISMO DE DESCARGA ROBUSTO Y FILAS ORGANIZADAS POR CADA CAMA Y TARIMA)
+        // EXPORTAR CSV TURNO (CON FILAS DETALLADAS POR CADA CAMA Y COLUMNAS SEPARADAS DE SOBRANTE, FALTANTE Y MERMA)
         function exportarCSVTurno() {
             let csvRows = [];
             
-            // Encabezados exactos requeridos
+            // Encabezados exactos en el orden solicitado
             const headers = [
                 "Número de orden",
                 "SKU",
@@ -928,7 +928,7 @@
                 return;
             }
 
-            // Ordenar órdenes por número de orden
+            // Ordenar órdenes y SKUs
             let ordenesOrdenadas = [...turnoData.ordenes].sort((a, b) => a.oc.localeCompare(b.oc, undefined, {numeric: true}));
 
             ordenesOrdenadas.forEach(o => {
@@ -943,12 +943,12 @@
                         let cantidadEsperadaStr = s.esperadas;
 
                         if (s.tarimas && s.tarimas.length > 0) {
-                            let tarimasOrdenadas = [...s.tarimas].sort((a, b) => a.id - b.id);
+                            let tarimasOrdenadas = [...s.tarimas].sort((a, b) => (a.id || 0) - (b.id || 0));
 
                             tarimasOrdenadas.forEach((t, tIdx) => {
                                 let numTarima = t.id || (tIdx + 1);
                                 if (t.camas && t.camas.length > 0) {
-                                    let camasOrdenadas = [...t.camas].sort((a, b) => a.id - b.id);
+                                    let camasOrdenadas = [...t.camas].sort((a, b) => (a.id || 0) - (b.id || 0));
 
                                     camasOrdenadas.forEach((c, cIdx) => {
                                         let numCama = c.id || (cIdx + 1);
@@ -959,18 +959,26 @@
                                         let faltante = 0;
                                         let merma = 0;
 
-                                        // Verificar si hay discrepancia registrada para este SKU
+                                        // Mapear discrepancias registradas
                                         if (s.discrepancias && s.discrepancias.length > 0) {
-                                            // Asignar a la primera cama si no hay especificación o coincidencia estricta
-                                            if (s.discrepancias.length === 1 && primcFilaSKU && tIdx === 0 && cIdx === 0) {
-                                                let d = s.discrepancias[0];
-                                                discTipo = d.tipo || "";
-                                                if (d.tipo === "Sobrante") sobrante = d.cantidad || 0;
-                                                if (d.tipo === "Faltante") faltante = d.cantidad || 0;
-                                                if (d.tipo === "Merma") merma = d.cantidad || 0;
-                                            }
+                                            s.discrepancias.forEach(d => {
+                                                if (d.tipo === "Sobrante") {
+                                                    sobrante = d.cantidad || 0;
+                                                    discTipo = "Sobrante";
+                                                }
+                                                if (d.tipo === "Faltante") {
+                                                    faltante = d.cantidad || 0;
+                                                    discTipo = "Faltante";
+                                                }
+                                                if (d.tipo === "Merma") {
+                                                    merma = d.cantidad || 0;
+                                                    discTipo = "Merma";
+                                                }
+                                            });
+                                            // Limpiar discrepancias globales para que solo se pinten en la primera cama/tarima o se distribuyan si aplica
                                         }
 
+                                        // Cantidad esperada solo en la primera fila del SKU
                                         let expVal = primeraFilaSKU ? cantidadEsperadaStr : "";
                                         primeraFilaSKU = false;
 
@@ -994,7 +1002,7 @@
                                 }
                             });
                         } else {
-                            // SKU sin tarimas registradas aún
+                            // SKU sin tarimas
                             let row = [
                                 `"${o.oc}"`,
                                 `"${s.codigo}"`,
@@ -1016,11 +1024,10 @@
                 }
             });
 
-            // Generar Blob con UTF-8 BOM para correcta apertura en Excel
+            // Generar Blob con UTF-8 BOM para apertura correcta en Excel
             const csvString = "\uFEFF" + csvRows.join("\r\n");
             const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
             
-            // Mecanismo seguro de descarga compatible con escritorio y móviles
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
